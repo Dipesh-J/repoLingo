@@ -1,0 +1,26 @@
+{
+  "name": "repolingo",
+  "version": "1.0.0",
+  "description": "The app that helps in translating github PRs and comments",
+  "license": "ISC",
+  "author": "Dipesh Joshi",
+  "type": "commonjs",
+  "main": "index.js",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --workspace=@repo-lingo/client\" \"npm run dev --workspace=@repo-lingo/server\"",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.9.3"
+  }
+}
