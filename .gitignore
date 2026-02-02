@@ -95,3 +95,6 @@ public/
 # Dist
 dist/
 dist-ssr/
+
+# Agent Files - Antigravity
+.agent

@@ -1,11 +1,35 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* GitHub Dark Mode Color Palette */
+  --github-bg-primary: #0d1117;
+  --github-bg-secondary: #161b22;
+  --github-bg-tertiary: #21262d;
+  --github-border: #30363d;
+  --github-border-muted: #21262d;
+
+  --github-text-primary: #c9d1d9;
+  --github-text-secondary: #8b949e;
+  --github-text-muted: #6e7681;
+
+  --github-link: #58a6ff;
+  --github-link-hover: #79c0ff;
+
+  /* Brand Green */
+  --color-primary-green: #238636;
+  --color-green-hover: #2ea043;
+  --color-green-glow: rgba(46, 160, 67, 0.4);
+
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(22, 27, 34, 0.7);
+  --glass-border: rgba(48, 54, 61, 0.6);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
+  --glass-shadow: 0 8px 32px 0 rgba(1, 4, 9, 0.85);
+
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color: var(--github-text-primary);
+  background-color: #0d1117;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,56 +37,125 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+  border: 2px solid #0d1117;
+  /* Creates padding effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #424a53;
+}
+
+/* Smooth Background */
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  padding: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #0d1117;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(56, 139, 253, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(35, 134, 54, 0.1) 0%, transparent 50%);
+  color: var(--github-text-primary);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  font-weight: 500;
+  color: var(--github-link);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--github-link-hover);
+}
+
+
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--github-text-primary);
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  font-size: 2em;
+  line-height: 1.25;
 }
 
+/* GitHub-style button (default) */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
+  border-radius: 6px;
+  border: 1px solid var(--github-border);
+  padding: 5px 16px;
+  font-size: 14px;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--github-bg-secondary);
+  color: var(--github-text-primary);
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: all 0.2s cubic-bezier(0.3, 0, 0.5, 1);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:hover {
+  background-color: var(--github-bg-tertiary);
+  border-color: var(--github-border);
+}
+
+button:active {
+  background-color: var(--github-bg-tertiary);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--github-link);
+  outline-offset: -2px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Brand green button (for translate) */
+button.btn-primary {
+  background-color: var(--color-primary-green);
+  color: #000000;
+  border-color: var(--color-primary-green);
+}
+
+button.btn-primary:hover {
+  background-color: var(--color-green-hover);
+  border-color: var(--color-green-hover);
+  box-shadow: 0 0 0 3px var(--color-green-glow);
+}
+
+button.btn-primary:active {
+  background-color: var(--color-green-hover);
+}
+
+button.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

@@ -1,42 +1,170 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* GitHub-style Markdown body styling */
+.markdown-body {
+  color: var(--github-text-primary);
+  line-height: 1.6;
+  font-size: 16px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--github-text-primary);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--github-border);
+  padding-bottom: 0.3em;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.markdown-body h1 {
+  font-size: 2em;
+  border-bottom: 1px solid var(--github-border);
 }
 
-.card {
-  padding: 2em;
+.markdown-body h2 {
+  font-size: 1.5em;
 }
 
-.read-the-docs {
-  color: #888;
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+
+.markdown-body p {
+  margin: 16px 0;
+  color: var(--github-text-primary);
+}
+
+.markdown-body code {
+  background-color: rgba(110, 118, 129, 0.4);
+  color: var(--github-text-primary);
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-size: 85%;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+}
+
+.markdown-body pre {
+  background-color: var(--github-bg-secondary) !important;
+  border: 1px solid var(--github-border);
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  line-height: 1.45;
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  padding: 0;
+  color: var(--github-text-primary);
+  font-size: 85%;
+  word-wrap: normal;
+  white-space: pre;
+}
+
+.markdown-body a {
+  color: var(--github-link);
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+  color: var(--github-link-hover);
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--github-border);
+  padding: 0 16px;
+  margin: 16px 0;
+  color: var(--github-text-secondary);
+  background-color: transparent;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 16px 0;
+  padding-left: 32px;
+  color: var(--github-text-primary);
+}
+
+.markdown-body li {
+  margin: 8px 0;
+}
+
+.markdown-body li > p {
+  margin-top: 16px;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 16px 0;
+  border-spacing: 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--github-border);
+  padding: 6px 13px;
+  text-align: left;
+}
+
+.markdown-body th {
+  background-color: var(--github-bg-secondary);
+  font-weight: 600;
+}
+
+.markdown-body tr:nth-child(even) {
+  background-color: var(--github-bg-secondary);
+}
+
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background-color: var(--github-bg-primary);
+}
+
+.markdown-body hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: var(--github-border);
+  border: 0;
+}
+
+/* Scrollbar styling - GitHub style */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--github-bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--github-border);
+  border: 3px solid var(--github-bg-primary);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--github-border-muted);
+}
+
+/* Custom focus for tab buttons */
+button.tab-button:focus,
+button.tab-button:focus-visible {
+  outline: 2px solid var(--color-primary-green);
+  outline-offset: -2px;
 }
