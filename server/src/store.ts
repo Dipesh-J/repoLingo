@@ -126,23 +126,79 @@ export async function createUser(data: Omit<User, 'id' | 'createdAt' | 'lastLogi
                 userDoc.lastLoginAt = new Date();
                 await userDoc.save();
             } else {
-                // Create new user
-                userDoc = await UserModel.create({
-                    githubId: data.githubId,
-                    login: data.login,
-                    name: data.name,
-                    email: data.email,
-                    avatarUrl: data.avatarUrl,
-                    accessToken: data.accessToken
-                });
+                // Create new user and preferences atomically
+                // Try using a transaction first (requires replica set)
+                const session = await mongoose.startSession();
+                let transactionSupported = true;
+                
+                try {
+                    session.startTransaction();
+                } catch {
+                    // Transactions not supported (e.g., standalone MongoDB)
+                    transactionSupported = false;
+                    await session.endSession();
+                }
 
-                // Create default preferences
-                await UserPreferencesModel.create({
-                    userId: userDoc._id,
-                    defaultTargetLanguage: 'en',
-                    autoTranslate: false,
-                    emailNotifications: false
-                });
+                if (transactionSupported) {
+                    // Use transaction for atomicity
+                    try {
+                        const createdUsers = await UserModel.create([{
+                            githubId: data.githubId,
+                            login: data.login,
+                            name: data.name,
+                            email: data.email,
+                            avatarUrl: data.avatarUrl,
+                            accessToken: data.accessToken
+                        }], { session });
+                        
+                        const createdUser = createdUsers[0];
+                        if (!createdUser) {
+                            throw new Error('Failed to create user');
+                        }
+
+                        await UserPreferencesModel.create([{
+                            userId: createdUser._id,
+                            defaultTargetLanguage: 'en',
+                            autoTranslate: false,
+                            emailNotifications: false
+                        }], { session });
+
+                        await session.commitTransaction();
+                        userDoc = createdUser;
+                    } catch (txError) {
+                        await session.abortTransaction();
+                        throw txError;
+                    } finally {
+                        await session.endSession();
+                    }
+                } else {
+                    // Fallback: manual rollback if preferences creation fails
+                    userDoc = await UserModel.create({
+                        githubId: data.githubId,
+                        login: data.login,
+                        name: data.name,
+                        email: data.email,
+                        avatarUrl: data.avatarUrl,
+                        accessToken: data.accessToken
+                    });
+
+                    try {
+                        await UserPreferencesModel.create({
+                            userId: userDoc._id,
+                            defaultTargetLanguage: 'en',
+                            autoTranslate: false,
+                            emailNotifications: false
+                        });
+                    } catch (prefsError) {
+                        // Rollback: delete the created user
+                        await UserModel.deleteOne({ _id: userDoc._id });
+                        throw prefsError;
+                    }
+                }
+            }
+
+            if (!userDoc) {
+                throw new Error('Failed to create or find user');
             }
 
             return toUser(userDoc);
