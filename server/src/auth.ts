@@ -81,19 +81,35 @@ export async function handleOAuthCallback(req: Request, res: Response) {
     }
 
     try {
-        // Exchange code for access token
-        const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                client_id: GITHUB_CLIENT_ID,
-                client_secret: GITHUB_CLIENT_SECRET,
-                code
-            })
-        });
+        // Exchange code for access token with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        let tokenResponse: globalThis.Response;
+        try {
+            tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_id: GITHUB_CLIENT_ID,
+                    client_secret: GITHUB_CLIENT_SECRET,
+                    code
+                }),
+                signal: controller.signal
+            });
+        } catch (fetchError) {
+            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                console.error('Token exchange timed out');
+                res.redirect(`${FRONTEND_URL}?error=timeout`);
+                return;
+            }
+            throw fetchError;
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         const tokenData = await tokenResponse.json() as {
             access_token?: string;
@@ -109,14 +125,30 @@ export async function handleOAuthCallback(req: Request, res: Response) {
 
         const accessToken = tokenData.access_token;
 
-        // Fetch user profile from GitHub
-        const userResponse = await fetch('https://api.github.com/user', {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'repoLingo'
+        // Fetch user profile from GitHub with timeout
+        const userController = new AbortController();
+        const userTimeoutId = setTimeout(() => userController.abort(), 10000); // 10s timeout
+
+        let userResponse: globalThis.Response;
+        try {
+            userResponse = await fetch('https://api.github.com/user', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'repoLingo'
+                },
+                signal: userController.signal
+            });
+        } catch (fetchError) {
+            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                console.error('User fetch timed out');
+                res.redirect(`${FRONTEND_URL}?error=timeout`);
+                return;
             }
-        });
+            throw fetchError;
+        } finally {
+            clearTimeout(userTimeoutId);
+        }
 
         if (!userResponse.ok) {
             console.error('Failed to fetch user profile:', userResponse.status);

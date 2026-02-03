@@ -91,15 +91,17 @@ export default function HowItWorks({ installUrl }: HowItWorksProps) {
                     <div key={step.number} style={{ position: 'relative' }}>
                         {/* Connector line */}
                         {index < steps.length - 1 && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '20px',
-                                left: 'calc(100% - 10px)',
-                                width: '40px',
-                                height: '2px',
-                                background: 'var(--github-border)',
-                                display: 'none' // Hidden on small screens
-                            }} />
+                            <div 
+                                className="connector-line"
+                                style={{
+                                    position: 'absolute',
+                                    top: '20px',
+                                    left: 'calc(100% - 10px)',
+                                    width: '40px',
+                                    height: '2px',
+                                    background: 'var(--github-border)'
+                                }} 
+                            />
                         )}
 
                         <div style={{
@@ -145,6 +147,17 @@ export default function HowItWorks({ installUrl }: HowItWorksProps) {
                     </div>
                 ))}
             </div>
+
+            <style>{`
+                .connector-line {
+                    display: none;
+                }
+                @media (min-width: 768px) {
+                    .connector-line {
+                        display: block;
+                    }
+                }
+            `}</style>
         </motion.div>
     );
 }

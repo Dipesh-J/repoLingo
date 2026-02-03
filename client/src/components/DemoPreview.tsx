@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlay, FaExchangeAlt, FaCheck } from 'react-icons/fa';
 
 export default function DemoPreview() {
     const [step, setStep] = useState(0);
     const [translating, setTranslating] = useState(false);
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) {
+                clearTimeout(timerRef.current);
+            }
+        };
+    }, []);
 
     const originalText = `## Description
 
@@ -39,14 +49,19 @@ Por favor revise y hagame saber si tiene preguntas!`;
     const handleDemo = () => {
         setStep(1);
         setTranslating(true);
-        setTimeout(() => {
+        timerRef.current = setTimeout(() => {
             setTranslating(false);
             setStep(2);
         }, 1500);
     };
 
     const resetDemo = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+            timerRef.current = null;
+        }
         setStep(0);
+        setTranslating(false);
     };
 
     return (

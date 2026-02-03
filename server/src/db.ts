@@ -4,8 +4,6 @@
 
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 let isConnected = false;
 
 export async function connectDB(): Promise<void> {
@@ -13,6 +11,9 @@ export async function connectDB(): Promise<void> {
         console.log('MongoDB already connected');
         return;
     }
+
+    // Read URI lazily to ensure dotenv has been loaded
+    const MONGODB_URI = process.env.MONGODB_URI;
 
     if (!MONGODB_URI) {
         console.error('MONGODB_URI is not defined in environment variables');
@@ -35,6 +36,16 @@ export function isDBConnected(): boolean {
 }
 
 // Handle connection events
+mongoose.connection.on('connected', () => {
+    console.log('MongoDB connected');
+    isConnected = true;
+});
+
+mongoose.connection.on('reconnected', () => {
+    console.log('MongoDB reconnected');
+    isConnected = true;
+});
+
 mongoose.connection.on('disconnected', () => {
     console.log('MongoDB disconnected');
     isConnected = false;

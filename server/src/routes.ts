@@ -137,15 +137,63 @@ router.get('/api/preferences', requireAuth, async (req, res) => {
     res.json(prefs);
 });
 
+// Allowed language codes (subset for validation)
+const ALLOWED_LANGUAGES = new Set([
+    'en', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'zh', 'ja', 'ko', 'ar', 'hi', 'nl', 
+    'pl', 'tr', 'vi', 'th', 'id', 'ms', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'uk',
+    'ro', 'hu', 'el', 'he', 'bg', 'hr', 'sr', 'sl', 'lt', 'lv', 'et', 'bn', 'ta',
+    'te', 'mr', 'gu', 'kn', 'ml', 'pa', 'ur', 'fa', 'sw', 'am', 'my', 'km', 'lo'
+]);
+
 // Update user preferences
 router.post('/api/preferences', requireAuth, async (req, res) => {
     const { defaultTargetLanguage, autoTranslate, emailNotifications } = req.body;
 
-    const updated = await updatePreferences(req.user!.id, {
-        defaultTargetLanguage,
-        autoTranslate,
-        emailNotifications
-    });
+    // Input validation
+    const errors: string[] = [];
+
+    // Validate defaultTargetLanguage
+    if (defaultTargetLanguage !== undefined) {
+        if (typeof defaultTargetLanguage !== 'string') {
+            errors.push('defaultTargetLanguage must be a string');
+        } else if (!ALLOWED_LANGUAGES.has(defaultTargetLanguage)) {
+            errors.push(`defaultTargetLanguage must be a valid language code`);
+        }
+    }
+
+    // Validate autoTranslate
+    if (autoTranslate !== undefined && typeof autoTranslate !== 'boolean') {
+        errors.push('autoTranslate must be a boolean');
+    }
+
+    // Validate emailNotifications
+    if (emailNotifications !== undefined && typeof emailNotifications !== 'boolean') {
+        errors.push('emailNotifications must be a boolean');
+    }
+
+    if (errors.length > 0) {
+        res.status(400).json({ error: errors.join(', ') });
+        return;
+    }
+
+    // Build sanitized update object with only allowed fields
+    const sanitizedUpdates: {
+        defaultTargetLanguage?: string;
+        autoTranslate?: boolean;
+        emailNotifications?: boolean;
+    } = {};
+
+    if (typeof defaultTargetLanguage === 'string' && ALLOWED_LANGUAGES.has(defaultTargetLanguage)) {
+        sanitizedUpdates.defaultTargetLanguage = defaultTargetLanguage;
+    }
+    if (typeof autoTranslate === 'boolean') {
+        sanitizedUpdates.autoTranslate = autoTranslate;
+    }
+    if (typeof emailNotifications === 'boolean') {
+        sanitizedUpdates.emailNotifications = emailNotifications;
+    }
+
+    const updated = await updatePreferences(req.user!.id, sanitizedUpdates);
 
     if (!updated) {
         res.status(404).json({ error: 'User not found' });
@@ -293,16 +341,31 @@ router.post('/api/translate', optionalAuth, async (req, res) => {
 
         // Track translation if user is authenticated and PR info is provided
         if (req.user && prInfo) {
-            await addTranslationRecord({
-                userId: req.user.id,
-                owner: prInfo.owner,
-                repo: prInfo.repo,
-                prNumber: prInfo.number,
-                prTitle: prInfo.title || 'Unknown PR',
-                sourceLanguage: sourceLanguage || 'auto',
-                targetLanguage,
-                contentType: prInfo.contentType || 'description'
-            });
+            // Validate prInfo before recording
+            const owner = typeof prInfo.owner === 'string' ? prInfo.owner.trim() : '';
+            const repo = typeof prInfo.repo === 'string' ? prInfo.repo.trim() : '';
+            const prNumber = typeof prInfo.number === 'number' ? prInfo.number : parseInt(prInfo.number);
+            
+            if (!owner || !repo || !prNumber || isNaN(prNumber)) {
+                console.warn('Invalid prInfo provided for translation history:', prInfo);
+            } else {
+                // Sanitize optional fields
+                const prTitle = typeof prInfo.title === 'string' && prInfo.title.trim() 
+                    ? prInfo.title.trim().slice(0, 200) 
+                    : 'Unknown PR';
+                const contentType = prInfo.contentType === 'comment' ? 'comment' : 'description';
+
+                await addTranslationRecord({
+                    userId: req.user.id,
+                    owner,
+                    repo,
+                    prNumber,
+                    prTitle,
+                    sourceLanguage: sourceLanguage || 'auto',
+                    targetLanguage,
+                    contentType
+                });
+            }
         }
 
         res.json({ translation: translated });

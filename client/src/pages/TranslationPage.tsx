@@ -14,7 +14,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import TabNavigation from '../components/TabNavigation';
 import CommentCard from '../components/CommentCard';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:3000') + '/api';
 
 // GitHub-style syntax highlighter theme
 const githubCodeTheme = {

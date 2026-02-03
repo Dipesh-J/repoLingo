@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -8,6 +8,7 @@ import { languages } from '../languages';
 export default function SettingsPage() {
     const { user, loading, preferences, updatePreferences } = useAuth();
     const navigate = useNavigate();
+    const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [defaultLanguage, setDefaultLanguage] = useState('en');
     const [autoTranslate, setAutoTranslate] = useState(false);
@@ -15,6 +16,15 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (savedTimerRef.current) {
+                clearTimeout(savedTimerRef.current);
+            }
+        };
+    }, []);
 
     // Redirect if not authenticated
     useEffect(() => {
@@ -37,6 +47,12 @@ export default function SettingsPage() {
         setError(null);
         setSaved(false);
 
+        // Clear any existing timer
+        if (savedTimerRef.current) {
+            clearTimeout(savedTimerRef.current);
+            savedTimerRef.current = null;
+        }
+
         try {
             await updatePreferences({
                 defaultTargetLanguage: defaultLanguage,
@@ -44,9 +60,10 @@ export default function SettingsPage() {
                 emailNotifications
             });
             setSaved(true);
-            setTimeout(() => setSaved(false), 3000);
-        } catch {
-            setError('Failed to save preferences. Please try again.');
+            savedTimerRef.current = setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to save preferences. Please try again.';
+            setError(message);
         } finally {
             setSaving(false);
         }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 
-const API_BASE = 'http://localhost:3000';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
 
 export interface User {
     id: string;
@@ -153,21 +153,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Update preferences
     const updatePreferencesHandler = useCallback(async (updates: Partial<UserPreferences>) => {
-        try {
-            const res = await fetch(`${API_BASE}/api/preferences`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updates)
-            });
-            if (res.ok) {
-                const updated = await res.json();
-                setPreferences(updated);
-            }
-        } catch (err) {
-            console.error('Failed to update preferences:', err);
-            throw err;
+        const res = await fetch(`${API_BASE}/api/preferences`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json().catch(() => ({ error: 'Failed to update preferences' }));
+            throw new Error(errorData.error || 'Failed to update preferences');
         }
+
+        const updated = await res.json();
+        setPreferences(updated);
     }, []);
 
     // Initial auth check
