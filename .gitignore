@@ -98,3 +98,4 @@ dist-ssr/
 
 # Agent Files - Antigravity
 .agent
+AGENTS.md

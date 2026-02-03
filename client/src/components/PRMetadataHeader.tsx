@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
-import { FaCodeBranch, FaRegClock, FaGithub } from 'react-icons/fa';
+import { FaRegClock, FaGithub } from 'react-icons/fa';
 import { GoGitPullRequest, GoGitMerge, GoIssueClosed } from 'react-icons/go';
 
 interface PRMetadataHeaderProps {

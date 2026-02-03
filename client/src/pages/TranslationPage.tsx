@@ -14,7 +14,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import TabNavigation from '../components/TabNavigation';
 import CommentCard from '../components/CommentCard';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:3000') + '/api';
 
 // GitHub-style syntax highlighter theme
 const githubCodeTheme = {
@@ -127,14 +127,24 @@ export default function TranslationPage() {
   }, [activeTab, owner, repo, number, comments.length]);
 
   const handleTranslate = async () => {
+    // Include PR info for history tracking (if user is authenticated)
+    const prInfo = {
+      owner,
+      repo,
+      number: parseInt(number || '0'),
+      title: prData?.title || 'Unknown PR',
+      contentType: activeTab as 'description' | 'comment'
+    };
+
     if (activeTab === 'description') {
       if (!prData?.body) return;
       setTranslating(true);
       try {
         const res = await axios.post(`${API_BASE}/translate`, {
           text: prData.body,
-          targetLanguage: targetLang
-        });
+          targetLanguage: targetLang,
+          prInfo
+        }, { withCredentials: true });
         setTranslated(res.data.translation);
       } catch (err) {
         console.error('Translation error:', err);
@@ -151,8 +161,9 @@ export default function TranslationPage() {
         const promises = selectedComments.map(async (comment) => {
           const res = await axios.post(`${API_BASE}/translate`, {
             text: comment.body,
-            targetLanguage: targetLang
-          });
+            targetLanguage: targetLang,
+            prInfo: { ...prInfo, contentType: 'comment' }
+          }, { withCredentials: true });
           return { id: comment.id, text: res.data.translation };
         });
 
