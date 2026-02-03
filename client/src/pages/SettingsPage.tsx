@@ -216,6 +216,7 @@ export default function SettingsPage() {
                             checked={autoTranslate}
                             onChange={setAutoTranslate}
                             disabled={true}
+                            ariaLabel="Auto-Translate"
                         />
                     </div>
 
@@ -252,6 +253,7 @@ export default function SettingsPage() {
                             checked={emailNotifications}
                             onChange={setEmailNotifications}
                             disabled={true}
+                            ariaLabel="Email Notifications"
                         />
                     </div>
                 </div>
@@ -383,13 +385,18 @@ export default function SettingsPage() {
 }
 
 // Toggle Switch Component
-function ToggleSwitch({ checked, onChange, disabled = false }: {
+function ToggleSwitch({ checked, onChange, disabled = false, ariaLabel }: {
     checked: boolean;
     onChange: (checked: boolean) => void;
     disabled?: boolean;
+    ariaLabel: string;
 }) {
     return (
         <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            aria-label={ariaLabel}
             onClick={() => !disabled && onChange(!checked)}
             disabled={disabled}
             style={{

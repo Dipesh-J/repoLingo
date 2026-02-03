@@ -35,14 +35,30 @@ router.get('/api/installations', requireAuth, async (req, res) => {
     try {
         const user = req.user!;
 
-        // Use the user's access token to fetch their installations
-        const response = await fetch('https://api.github.com/user/installations', {
-            headers: {
-                'Authorization': `Bearer ${user.accessToken}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'repoLingo'
+        // Use the user's access token to fetch their installations with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        let response: globalThis.Response;
+        try {
+            response = await fetch('https://api.github.com/user/installations', {
+                headers: {
+                    'Authorization': `Bearer ${user.accessToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'User-Agent': 'repoLingo'
+                },
+                signal: controller.signal
+            });
+        } catch (fetchError) {
+            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                console.error('Installations fetch timed out');
+                res.status(504).json({ error: 'Request timed out while fetching installations' });
+                return;
             }
-        });
+            throw fetchError;
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!response.ok) {
             console.error('Failed to fetch installations:', response.status);
@@ -63,9 +79,12 @@ router.get('/api/installations', requireAuth, async (req, res) => {
             }>;
         };
 
-        // For each installation, fetch the repositories
+        // For each installation, fetch the repositories with timeout
         const installationsWithRepos = await Promise.all(
             data.installations.map(async (installation) => {
+                const repoController = new AbortController();
+                const repoTimeoutId = setTimeout(() => repoController.abort(), 10000); // 10s timeout
+
                 try {
                     const reposResponse = await fetch(
                         `https://api.github.com/user/installations/${installation.id}/repositories`,
@@ -74,7 +93,8 @@ router.get('/api/installations', requireAuth, async (req, res) => {
                                 'Authorization': `Bearer ${user.accessToken}`,
                                 'Accept': 'application/vnd.github.v3+json',
                                 'User-Agent': 'repoLingo'
-                            }
+                            },
+                            signal: repoController.signal
                         }
                     );
 
@@ -102,9 +122,16 @@ router.get('/api/installations', requireAuth, async (req, res) => {
                         };
                     }
                 } catch (err) {
-                    console.error(`Error fetching repos for installation ${installation.id}:`, err);
+                    if (err instanceof Error && err.name === 'AbortError') {
+                        console.error(`Timeout fetching repos for installation ${installation.id}`);
+                    } else {
+                        console.error(`Error fetching repos for installation ${installation.id}:`, err);
+                    }
+                } finally {
+                    clearTimeout(repoTimeoutId);
                 }
 
+                // Fallback: return installation with empty repositories on error/timeout
                 return {
                     id: installation.id,
                     accountLogin: installation.account.login,

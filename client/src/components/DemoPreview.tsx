@@ -88,6 +88,7 @@ Por favor revise y hagame saber si tiene preguntas!`;
                 </h2>
                 {step === 0 ? (
                     <button
+                        type="button"
                         onClick={handleDemo}
                         style={{
                             display: 'flex',
@@ -108,6 +109,7 @@ Por favor revise y hagame saber si tiene preguntas!`;
                     </button>
                 ) : (
                     <button
+                        type="button"
                         onClick={resetDemo}
                         style={{
                             padding: '8px 16px',
