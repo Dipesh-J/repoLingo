@@ -4,30 +4,19 @@
 
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { createUser, createSession, deleteSession, getUserFromSession } from './store.js';
+import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession } from './store.js';
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const GITHUB_APP_SLUG = process.env.GITHUB_APP_SLUG || 'repoLingo';
-
-// State tokens to prevent CSRF (short-lived, in-memory)
-const oauthStates = new Map<string, { createdAt: Date }>();
-
-// Clean up old states every 5 minutes
-setInterval(() => {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    for (const [state, data] of oauthStates) {
-        if (data.createdAt < fiveMinutesAgo) {
-            oauthStates.delete(state);
-        }
-    }
-}, 5 * 60 * 1000);
+const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 /**
  * Redirect user to GitHub OAuth authorization page
  */
-export function initiateOAuth(req: Request, res: Response) {
+export async function initiateOAuth(req: Request, res: Response) {
     if (!GITHUB_CLIENT_ID) {
         console.error('GITHUB_CLIENT_ID not configured');
         res.redirect(`${FRONTEND_URL}?error=config`);
@@ -35,7 +24,13 @@ export function initiateOAuth(req: Request, res: Response) {
     }
 
     const state = uuidv4();
-    oauthStates.set(state, { createdAt: new Date() });
+    try {
+        await createOAuthState(state, new Date(Date.now() + OAUTH_STATE_TTL_MS));
+    } catch (error) {
+        console.error('Failed to create OAuth state:', error);
+        res.redirect(`${FRONTEND_URL}?error=server_error`);
+        return;
+    }
 
     const params = new URLSearchParams({
         client_id: GITHUB_CLIENT_ID,
@@ -61,12 +56,26 @@ export async function handleOAuthCallback(req: Request, res: Response) {
     }
 
     // Validate state to prevent CSRF
-    if (!state || typeof state !== 'string' || !oauthStates.has(state)) {
+    if (!state || typeof state !== 'string') {
         console.error('Invalid OAuth state');
         res.redirect(`${FRONTEND_URL}?error=invalid_state`);
         return;
     }
-    oauthStates.delete(state);
+
+    let stateValid = false;
+    try {
+        stateValid = await consumeOAuthState(state);
+    } catch (error) {
+        console.error('Failed to consume OAuth state:', error);
+        res.redirect(`${FRONTEND_URL}?error=server_error`);
+        return;
+    }
+
+    if (!stateValid) {
+        console.error('Invalid or expired OAuth state');
+        res.redirect(`${FRONTEND_URL}?error=invalid_state`);
+        return;
+    }
 
     if (!code || typeof code !== 'string') {
         console.error('No code in OAuth callback');
@@ -180,8 +189,8 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         // Set session cookie
         res.cookie('session', session.id, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: IS_PROD,
+            sameSite: IS_PROD ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             path: '/'
         });
@@ -205,7 +214,11 @@ export async function logout(req: Request, res: Response) {
         await deleteSession(sessionId);
     }
 
-    res.clearCookie('session', { path: '/' });
+    res.clearCookie('session', { 
+        path: '/', 
+        sameSite: IS_PROD ? 'none' : 'lax',
+        secure: IS_PROD
+    });
     res.redirect(FRONTEND_URL);
 }
 
@@ -223,7 +236,11 @@ export async function getCurrentUser(req: Request, res: Response) {
     const user = await getUserFromSession(sessionId);
 
     if (!user) {
-        res.clearCookie('session', { path: '/' });
+        res.clearCookie('session', { 
+            path: '/', 
+            sameSite: IS_PROD ? 'none' : 'lax',
+            secure: IS_PROD
+        });
         res.status(401).json({ error: 'Session expired' });
         return;
     }

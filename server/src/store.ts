@@ -7,6 +7,7 @@ import { isDBConnected } from './db.js';
 import { 
     UserModel, 
     SessionModel, 
+    OAuthStateModel,
     UserPreferencesModel, 
     TranslationRecordModel,
     type IUser,
@@ -64,11 +65,31 @@ const memoryUsersByGithubId = new Map<number, string>();
 const memorySessions = new Map<string, Session>();
 const memoryPreferences = new Map<string, UserPreferences>();
 const memoryTranslationHistory = new Map<string, TranslationRecord[]>();
+const memoryOAuthStates = new Map<string, Date>();
 
 // Session expiry time (7 days)
 const SESSION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
+const ALLOW_MEMORY_FALLBACK = process.env.NODE_ENV !== 'production';
 
 // ==================== Helper Functions ====================
+
+function assertMemoryFallbackAllowed(context: string): void {
+    if (ALLOW_MEMORY_FALLBACK) {
+        return;
+    }
+    const error = new Error(`MongoDB is required in production (${context})`);
+    console.error(error.message);
+    throw error;
+}
+
+function purgeExpiredOAuthStates(): void {
+    const now = new Date();
+    for (const [state, expiresAt] of memoryOAuthStates) {
+        if (expiresAt <= now) {
+            memoryOAuthStates.delete(state);
+        }
+    }
+}
 
 function toUser(doc: IUser): User {
     return {
@@ -208,6 +229,8 @@ export async function createUser(data: Omit<User, 'id' | 'createdAt' | 'lastLogi
         }
     }
 
+    assertMemoryFallbackAllowed('createUser');
+
     // In-memory fallback
     const existingId = memoryUsersByGithubId.get(data.githubId);
     if (existingId) {
@@ -250,6 +273,7 @@ export async function getUserById(id: string): Promise<User | undefined> {
             console.error('MongoDB getUserById error:', error);
         }
     }
+    assertMemoryFallbackAllowed('getUserById');
     return memoryUsers.get(id);
 }
 
@@ -262,8 +286,54 @@ export async function getUserByGithubId(githubId: number): Promise<User | undefi
             console.error('MongoDB getUserByGithubId error:', error);
         }
     }
+    assertMemoryFallbackAllowed('getUserByGithubId');
     const id = memoryUsersByGithubId.get(githubId);
     return id ? memoryUsers.get(id) : undefined;
+}
+
+// ==================== OAuth State Functions ====================
+
+export async function createOAuthState(state: string, expiresAt: Date): Promise<void> {
+    if (isDBConnected()) {
+        try {
+            await OAuthStateModel.create({
+                state,
+                expiresAt
+            });
+            return;
+        } catch (error) {
+            console.error('MongoDB createOAuthState error:', error);
+        }
+    }
+
+    assertMemoryFallbackAllowed('createOAuthState');
+    purgeExpiredOAuthStates();
+    memoryOAuthStates.set(state, expiresAt);
+}
+
+export async function consumeOAuthState(state: string): Promise<boolean> {
+    if (isDBConnected()) {
+        try {
+            const doc = await OAuthStateModel.findOneAndDelete({
+                state,
+                expiresAt: { $gt: new Date() }
+            });
+            return !!doc;
+        } catch (error) {
+            console.error('MongoDB consumeOAuthState error:', error);
+        }
+    }
+
+    assertMemoryFallbackAllowed('consumeOAuthState');
+    purgeExpiredOAuthStates();
+    const expiresAt = memoryOAuthStates.get(state);
+    if (!expiresAt) return false;
+    if (expiresAt <= new Date()) {
+        memoryOAuthStates.delete(state);
+        return false;
+    }
+    memoryOAuthStates.delete(state);
+    return true;
 }
 
 // ==================== Session Functions ====================
@@ -290,6 +360,8 @@ export async function createSession(userId: string): Promise<Session> {
             console.error('MongoDB createSession error:', error);
         }
     }
+
+    assertMemoryFallbackAllowed('createSession');
 
     // In-memory fallback
     const session: Session = {
@@ -324,6 +396,8 @@ export async function getSession(sessionId: string): Promise<Session | undefined
         }
     }
 
+    assertMemoryFallbackAllowed('getSession');
+
     // In-memory fallback
     const session = memorySessions.get(sessionId);
     if (!session) return undefined;
@@ -345,6 +419,7 @@ export async function deleteSession(sessionId: string): Promise<boolean> {
             console.error('MongoDB deleteSession error:', error);
         }
     }
+    assertMemoryFallbackAllowed('deleteSession');
     return memorySessions.delete(sessionId);
 }
 
@@ -367,6 +442,7 @@ export async function getPreferences(userId: string): Promise<UserPreferences | 
             console.error('MongoDB getPreferences error:', error);
         }
     }
+    assertMemoryFallbackAllowed('getPreferences');
     return memoryPreferences.get(userId);
 }
 
@@ -386,6 +462,8 @@ export async function updatePreferences(
             console.error('MongoDB updatePreferences error:', error);
         }
     }
+
+    assertMemoryFallbackAllowed('updatePreferences');
 
     // In-memory fallback
     const existing = memoryPreferences.get(userId);
@@ -419,6 +497,8 @@ export async function addTranslationRecord(
         }
     }
 
+    assertMemoryFallbackAllowed('addTranslationRecord');
+
     // In-memory fallback
     const id = `trans_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const fullRecord: TranslationRecord = {
@@ -450,6 +530,8 @@ export async function getTranslationHistory(userId: string, limit = 20): Promise
             console.error('MongoDB getTranslationHistory error:', error);
         }
     }
+
+    assertMemoryFallbackAllowed('getTranslationHistory');
 
     // In-memory fallback
     const history = memoryTranslationHistory.get(userId) || [];
@@ -493,6 +575,8 @@ export async function getTranslationStats(userId: string): Promise<{
             console.error('MongoDB getTranslationStats error:', error);
         }
     }
+
+    assertMemoryFallbackAllowed('getTranslationStats');
 
     // In-memory fallback
     const history = memoryTranslationHistory.get(userId) || [];
@@ -542,6 +626,8 @@ export async function getStoreStats(): Promise<{
             console.error('MongoDB getStoreStats error:', error);
         }
     }
+
+    assertMemoryFallbackAllowed('getStoreStats');
 
     return {
         users: memoryUsers.size,

@@ -51,6 +51,25 @@ SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const SessionModel = mongoose.model<ISession>('Session', SessionSchema);
 
+// ==================== OAuth State Model ====================
+
+export interface IOAuthState extends Document {
+    state: string;
+    createdAt: Date;
+    expiresAt: Date;
+}
+
+const OAuthStateSchema = new Schema<IOAuthState>({
+    state: { type: String, required: true, unique: true, index: true },
+    createdAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true }
+});
+
+// TTL index to auto-delete expired states
+OAuthStateSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+export const OAuthStateModel = mongoose.model<IOAuthState>('OAuthState', OAuthStateSchema);
+
 // ==================== User Preferences Model ====================
 
 export interface IUserPreferences extends Document {

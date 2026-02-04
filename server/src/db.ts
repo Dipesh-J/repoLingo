@@ -16,7 +16,11 @@ export async function connectDB(): Promise<void> {
     const MONGODB_URI = process.env.MONGODB_URI;
 
     if (!MONGODB_URI) {
+        const isProd = process.env.NODE_ENV === 'production';
         console.error('MONGODB_URI is not defined in environment variables');
+        if (isProd) {
+            throw new Error('MONGODB_URI is required in production');
+        }
         console.log('Running in fallback mode (in-memory storage)');
         return;
     }
