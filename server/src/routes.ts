@@ -260,20 +260,34 @@ router.get('/api/debug/stats', async (req, res) => {
 
 // Webhook Handler
 router.post('/webhooks/github', async (req, res) => {
-    const id = req.headers['x-github-delivery'] as string;
-    const name = req.headers['x-github-event'] as any;
-    const payload = req.body;
+    const id = req.header('x-github-delivery');
+    const name = req.header('x-github-event');
+    const signature = req.header('x-hub-signature-256');
+
+    if (!id || !name || !signature) {
+        res.status(400).send('Missing required webhook headers');
+        return;
+    }
+
+    if (!req.rawBody) {
+        res.status(400).send('Missing raw webhook payload');
+        return;
+    }
+
+    const payload = req.rawBody.toString('utf8');
 
     try {
-        await githubApp.webhooks.receive({
+        await githubApp.webhooks.verifyAndReceive({
             id,
             name,
             payload,
+            signature
         });
         res.status(200).send('Webhook processed');
     } catch (error) {
+        const status = (error as { status?: number })?.status ?? 500;
         console.error('Webhook processing failed:', error);
-        res.status(500).send('Server Error');
+        res.status(status).send(status === 400 ? 'Invalid webhook signature' : 'Server Error');
     }
 });
 
