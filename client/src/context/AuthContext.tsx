@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import type { ReactNode } from 'react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+const AUTH_TOKEN_KEY = 'auth_token';
 
 export interface User {
     id: string;
@@ -69,6 +70,48 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+/**
+ * Get the stored auth token
+ */
+export function getAuthToken(): string | null {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Set the auth token
+ */
+export function setAuthToken(token: string): void {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+}
+
+/**
+ * Clear the auth token
+ */
+export function clearAuthToken(): void {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Helper function to make authenticated API requests
+ */
+export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const token = getAuthToken();
+    
+    const headers: HeadersInit = {
+        ...options.headers,
+    };
+    
+    if (token) {
+        (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+    
+    return fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include' // Keep for backward compatibility
+    });
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -81,16 +124,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Check for authentication on mount
     const refreshUser = useCallback(async () => {
+        const token = getAuthToken();
+        
+        // If no token, user is not authenticated
+        if (!token) {
+            setUser(null);
+            setLoading(false);
+            return;
+        }
+
         try {
-            const res = await fetch(`${API_BASE}/auth/me`, {
-                credentials: 'include'
-            });
+            const res = await authFetch(`${API_BASE}/auth/me`);
 
             if (res.ok) {
                 const userData = await res.json();
                 setUser(userData);
                 setError(null);
             } else {
+                // Token is invalid or expired, clear it
+                clearAuthToken();
                 setUser(null);
             }
         } catch (err) {
@@ -105,9 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshPreferences = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await fetch(`${API_BASE}/api/preferences`, {
-                credentials: 'include'
-            });
+            const res = await authFetch(`${API_BASE}/api/preferences`);
             if (res.ok) {
                 const prefs = await res.json();
                 setPreferences(prefs);
@@ -121,9 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshInstallations = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await fetch(`${API_BASE}/api/installations`, {
-                credentials: 'include'
-            });
+            const res = await authFetch(`${API_BASE}/api/installations`);
             if (res.ok) {
                 const data = await res.json();
                 setInstallations(data.installations || []);
@@ -138,9 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const refreshHistory = useCallback(async () => {
         if (!user) return;
         try {
-            const res = await fetch(`${API_BASE}/api/history`, {
-                credentials: 'include'
-            });
+            const res = await authFetch(`${API_BASE}/api/history`);
             if (res.ok) {
                 const data = await res.json();
                 setHistory(data.history || []);
@@ -153,9 +199,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Update preferences
     const updatePreferencesHandler = useCallback(async (updates: Partial<UserPreferences>) => {
-        const res = await fetch(`${API_BASE}/api/preferences`, {
+        const res = await authFetch(`${API_BASE}/api/preferences`, {
             method: 'POST',
-            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updates)
         });
@@ -207,6 +252,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const logout = useCallback(() => {
+        // Clear local token
+        clearAuthToken();
+        // Clear state
+        setUser(null);
+        setPreferences(null);
+        setInstallations([]);
+        setHistory([]);
+        setStats(null);
+        // Also call server logout to clear any server-side session
         window.location.href = `${API_BASE}/auth/logout`;
     }, []);
 

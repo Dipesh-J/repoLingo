@@ -5,6 +5,7 @@ import LandingPage from './pages/LandingPage';
 import DashboardPage from './pages/DashboardPage';
 import SettingsPage from './pages/SettingsPage';
 import TranslationPage from './pages/TranslationPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import './App.css';
 import type { ReactNode } from 'react';
 
@@ -54,6 +55,9 @@ function AppContent() {
             <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={user ? <DashboardPage /> : <LandingPage />} />
+
+                {/* Auth callback - handles OAuth token */}
+                <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
