@@ -24,7 +24,8 @@ if (isProd) {
         'LINGO_API_KEY',
         'MONGODB_URI',
         'FRONTEND_URL',
-        'DASHBOARD_URL'
+        'DASHBOARD_URL',
+        'JWT_SECRET'
     ];
     const missing = requiredEnv.filter((key) => !process.env[key]);
     if (missing.length > 0) {

@@ -4,7 +4,8 @@
 
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession } from './store.js';
+import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession, getUserById } from './store.js';
+import { signToken, extractTokenFromHeader, verifyToken } from './jwt.js';
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
@@ -183,10 +184,13 @@ export async function handleOAuthCallback(req: Request, res: Response) {
             accessToken
         });
 
-        // Create session
+        // Generate JWT token for cross-origin auth
+        const token = signToken(user);
+
+        // Also create session for same-origin cookie auth (backward compatibility)
         const session = await createSession(user.id);
 
-        // Set session cookie
+        // Set session cookie (for same-origin scenarios)
         res.cookie('session', session.id, {
             httpOnly: true,
             secure: IS_PROD,
@@ -195,8 +199,9 @@ export async function handleOAuthCallback(req: Request, res: Response) {
             path: '/'
         });
 
-        // Redirect to dashboard
-        res.redirect(`${FRONTEND_URL}/dashboard`);
+        // Redirect to dashboard with token in URL hash fragment
+        // Hash fragment is not sent to server, making it more secure
+        res.redirect(`${FRONTEND_URL}/auth/callback#token=${token}`);
 
     } catch (error) {
         console.error('OAuth callback error:', error);
@@ -224,8 +229,36 @@ export async function logout(req: Request, res: Response) {
 
 /**
  * Get current user info
+ * Supports both JWT tokens (Authorization header) and session cookies
  */
 export async function getCurrentUser(req: Request, res: Response) {
+    // First try JWT token from Authorization header
+    const authHeader = req.headers.authorization;
+    const token = extractTokenFromHeader(authHeader);
+    
+    if (token) {
+        const payload = verifyToken(token);
+        if (payload) {
+            const user = await getUserById(payload.userId);
+            if (user) {
+                // Return user info (exclude sensitive fields)
+                res.json({
+                    id: user.id,
+                    login: user.login,
+                    name: user.name,
+                    email: user.email,
+                    avatarUrl: user.avatarUrl,
+                    createdAt: user.createdAt
+                });
+                return;
+            }
+        }
+        // Token is invalid
+        res.status(401).json({ error: 'Invalid token' });
+        return;
+    }
+
+    // Fall back to session cookie
     const sessionId = req.cookies?.session;
 
     if (!sessionId) {
