@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FaGithub, FaLanguage, FaRocket, FaComments, FaArrowRight, FaCheck } from 'react-icons/fa';
+import Typewriter from '../components/Typewriter';
 
 export default function LandingPage() {
     const { login, error, loading } = useAuth();
@@ -53,8 +54,8 @@ export default function LandingPage() {
                         alignItems: 'center',
                         gap: '8px',
                         padding: '6px 16px',
-                        background: 'rgba(35, 134, 54, 0.15)',
-                        border: '1px solid rgba(35, 134, 54, 0.4)',
+                        background: 'rgba(147, 222, 133, 0.1)',
+                        border: '1px solid rgba(147, 222, 133, 0.2)',
                         borderRadius: '100px',
                         fontSize: '14px',
                         color: 'var(--color-primary-green)',
@@ -76,12 +77,21 @@ export default function LandingPage() {
                     }}>
                         Translate GitHub PRs<br />
                         <span style={{
-                            background: 'linear-gradient(135deg, var(--color-primary-green), #0ea5e9)',
+                            background: 'linear-gradient(135deg, var(--color-primary-green), #4 ade80)',
                             WebkitBackgroundClip: 'text'
                         }}>
                             in any language
                         </span>
                     </h1>
+
+                    {/* Typewriter Animation */}
+                    <div style={{
+                        margin: '0 auto 32px',
+                        display: 'flex',
+                        justifyContent: 'center'
+                    }}>
+                        <Typewriter />
+                    </div>
 
                     {/* Subheadline */}
                     <p style={{
@@ -128,12 +138,12 @@ export default function LandingPage() {
                             padding: '16px 32px',
                             fontSize: '18px',
                             fontWeight: 600,
-                            background: 'linear-gradient(135deg, var(--color-primary-green), #1a7f37)',
-                            color: 'white',
+                            background: 'linear-gradient(135deg, var(--color-primary-green), #6fdd55)',
+                            color: '#000',
                             border: 'none',
                             borderRadius: '12px',
                             cursor: loading ? 'wait' : 'pointer',
-                            boxShadow: '0 4px 20px rgba(35, 134, 54, 0.4)',
+                            boxShadow: '0 4px 20px rgba(147, 222, 133, 0.3)',
                             transition: 'all 0.2s'
                         }}
                     >
@@ -260,7 +270,7 @@ export default function LandingPage() {
                                 width: '48px',
                                 height: '48px',
                                 borderRadius: '12px',
-                                background: 'rgba(35, 134, 54, 0.15)',
+                                background: 'rgba(147, 222, 133, 0.1)',
                                 color: 'var(--color-primary-green)',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -328,8 +338,8 @@ export default function LandingPage() {
                     ))}
                     <span style={{
                         padding: '8px 16px',
-                        background: 'rgba(35, 134, 54, 0.15)',
-                        border: '1px solid rgba(35, 134, 54, 0.4)',
+                        background: 'rgba(147, 222, 133, 0.1)',
+                        border: '1px solid rgba(147, 222, 133, 0.3)',
                         borderRadius: '100px',
                         fontSize: '14px',
                         color: 'var(--color-primary-green)'
