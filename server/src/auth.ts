@@ -6,21 +6,17 @@ import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession, getUserById } from './store.js';
 import { signToken, extractTokenFromHeader, verifyToken } from './jwt.js';
+import { config } from './config.js';
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const GITHUB_APP_SLUG = process.env.GITHUB_APP_SLUG || 'repoLingo';
 const OAUTH_STATE_TTL_MS = 10 * 60 * 1000;
-const IS_PROD = process.env.NODE_ENV === 'production';
 
 /**
  * Redirect user to GitHub OAuth authorization page
  */
 export async function initiateOAuth(req: Request, res: Response) {
-    if (!GITHUB_CLIENT_ID) {
+    if (!config.githubClientId) {
         console.error('GITHUB_CLIENT_ID not configured');
-        res.redirect(`${FRONTEND_URL}?error=config`);
+        res.redirect(`${config.frontendUrl}?error=config`);
         return;
     }
 
@@ -29,12 +25,12 @@ export async function initiateOAuth(req: Request, res: Response) {
         await createOAuthState(state, new Date(Date.now() + OAUTH_STATE_TTL_MS));
     } catch (error) {
         console.error('Failed to create OAuth state:', error);
-        res.redirect(`${FRONTEND_URL}?error=server_error`);
+        res.redirect(`${config.frontendUrl}?error=server_error`);
         return;
     }
 
     const params = new URLSearchParams({
-        client_id: GITHUB_CLIENT_ID,
+        client_id: config.githubClientId,
         redirect_uri: `${req.protocol}://${req.get('host')}/auth/github/callback`,
         scope: 'user:email read:user',
         state
@@ -52,14 +48,14 @@ export async function handleOAuthCallback(req: Request, res: Response) {
     // Handle OAuth errors
     if (error) {
         console.error('OAuth error from GitHub:', error);
-        res.redirect(`${FRONTEND_URL}?error=oauth_denied`);
+        res.redirect(`${config.frontendUrl}?error=oauth_denied`);
         return;
     }
 
     // Validate state to prevent CSRF
     if (!state || typeof state !== 'string') {
         console.error('Invalid OAuth state');
-        res.redirect(`${FRONTEND_URL}?error=invalid_state`);
+        res.redirect(`${config.frontendUrl}?error=invalid_state`);
         return;
     }
 
@@ -68,25 +64,25 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         stateValid = await consumeOAuthState(state);
     } catch (error) {
         console.error('Failed to consume OAuth state:', error);
-        res.redirect(`${FRONTEND_URL}?error=server_error`);
+        res.redirect(`${config.frontendUrl}?error=server_error`);
         return;
     }
 
     if (!stateValid) {
         console.error('Invalid or expired OAuth state');
-        res.redirect(`${FRONTEND_URL}?error=invalid_state`);
+        res.redirect(`${config.frontendUrl}?error=invalid_state`);
         return;
     }
 
     if (!code || typeof code !== 'string') {
         console.error('No code in OAuth callback');
-        res.redirect(`${FRONTEND_URL}?error=no_code`);
+        res.redirect(`${config.frontendUrl}?error=no_code`);
         return;
     }
 
-    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    if (!config.githubClientId || !config.githubClientSecret) {
         console.error('GitHub OAuth not configured');
-        res.redirect(`${FRONTEND_URL}?error=config`);
+        res.redirect(`${config.frontendUrl}?error=config`);
         return;
     }
 
@@ -104,8 +100,8 @@ export async function handleOAuthCallback(req: Request, res: Response) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    client_id: GITHUB_CLIENT_ID,
-                    client_secret: GITHUB_CLIENT_SECRET,
+                    client_id: config.githubClientId,
+                    client_secret: config.githubClientSecret,
                     code
                 }),
                 signal: controller.signal
@@ -113,7 +109,7 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         } catch (fetchError) {
             if (fetchError instanceof Error && fetchError.name === 'AbortError') {
                 console.error('Token exchange timed out');
-                res.redirect(`${FRONTEND_URL}?error=timeout`);
+                res.redirect(`${config.frontendUrl}?error=timeout`);
                 return;
             }
             throw fetchError;
@@ -129,7 +125,7 @@ export async function handleOAuthCallback(req: Request, res: Response) {
 
         if (tokenData.error || !tokenData.access_token) {
             console.error('Token exchange failed:', tokenData.error_description || tokenData.error);
-            res.redirect(`${FRONTEND_URL}?error=token_exchange`);
+            res.redirect(`${config.frontendUrl}?error=token_exchange`);
             return;
         }
 
@@ -152,7 +148,7 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         } catch (fetchError) {
             if (fetchError instanceof Error && fetchError.name === 'AbortError') {
                 console.error('User fetch timed out');
-                res.redirect(`${FRONTEND_URL}?error=timeout`);
+                res.redirect(`${config.frontendUrl}?error=timeout`);
                 return;
             }
             throw fetchError;
@@ -162,7 +158,7 @@ export async function handleOAuthCallback(req: Request, res: Response) {
 
         if (!userResponse.ok) {
             console.error('Failed to fetch user profile:', userResponse.status);
-            res.redirect(`${FRONTEND_URL}?error=user_fetch`);
+            res.redirect(`${config.frontendUrl}?error=user_fetch`);
             return;
         }
 
@@ -193,19 +189,19 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         // Set session cookie (for same-origin scenarios)
         res.cookie('session', session.id, {
             httpOnly: true,
-            secure: IS_PROD,
-            sameSite: IS_PROD ? 'none' : 'lax',
+            secure: config.isProd,
+            sameSite: config.isProd ? 'none' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             path: '/'
         });
 
         // Redirect to dashboard with token in URL hash fragment
         // Hash fragment is not sent to server, making it more secure
-        res.redirect(`${FRONTEND_URL}/auth/callback#token=${token}`);
+        res.redirect(`${config.frontendUrl}/auth/callback#token=${token}`);
 
     } catch (error) {
         console.error('OAuth callback error:', error);
-        res.redirect(`${FRONTEND_URL}?error=server_error`);
+        res.redirect(`${config.frontendUrl}?error=server_error`);
     }
 }
 
@@ -221,10 +217,10 @@ export async function logout(req: Request, res: Response) {
 
     res.clearCookie('session', { 
         path: '/', 
-        sameSite: IS_PROD ? 'none' : 'lax',
-        secure: IS_PROD
+        sameSite: config.isProd ? 'none' : 'lax',
+        secure: config.isProd
     });
-    res.redirect(FRONTEND_URL);
+    res.redirect(config.frontendUrl);
 }
 
 /**
@@ -271,8 +267,8 @@ export async function getCurrentUser(req: Request, res: Response) {
     if (!user) {
         res.clearCookie('session', { 
             path: '/', 
-            sameSite: IS_PROD ? 'none' : 'lax',
-            secure: IS_PROD
+            sameSite: config.isProd ? 'none' : 'lax',
+            secure: config.isProd
         });
         res.status(401).json({ error: 'Session expired' });
         return;
@@ -293,5 +289,5 @@ export async function getCurrentUser(req: Request, res: Response) {
  * Get GitHub App installation URL
  */
 export function getInstallUrl(): string {
-    return `https://github.com/apps/${GITHUB_APP_SLUG}/installations/new`;
+    return `https://github.com/apps/${config.githubAppSlug}/installations/new`;
 }

@@ -1,5 +1,6 @@
 import { LingoDotDevEngine } from "lingo.dev/sdk";
 import { extractContent, restoreContent } from './markdown.js';
+import { config } from './config.js';
 
 const cache = new Map<string, string>();
 const sourceLangCache = new Map<string, string>(); // Cache for detected source languages
@@ -42,16 +43,14 @@ async function detectSourceLanguage(text: string): Promise<string> {
         return cached;
     }
 
-    const apiKey = process.env.LINGO_API_KEY;
-    
     // Fallback to "en" if API Key is missing
-    if (!apiKey) {
+    if (!config.lingoApiKey) {
         console.log('No API key, defaulting to English');
         return "en";
     }
 
     try {
-        const lingo = new LingoDotDevEngine({ apiKey });
+        const lingo = new LingoDotDevEngine({ apiKey: config.lingoApiKey });
         
         // Use Lingo.dev's recognizeLocale for language detection
         // Use a sample of the text (first 1000 chars) for faster detection
@@ -70,15 +69,13 @@ async function detectSourceLanguage(text: string): Promise<string> {
 }
 
 async function callLingoApi(text: string, sourceLanguage: string, targetLanguage: string): Promise<string> {
-    const apiKey = process.env.LINGO_API_KEY;
-    
     // Fallback to Mock if API Key is missing
-    if (!apiKey) {
+    if (!config.lingoApiKey) {
         return `[MOCK ${sourceLanguage}->${targetLanguage.toUpperCase()}] ${text}`;
     }
 
     try {
-        const lingo = new LingoDotDevEngine({ apiKey });
+        const lingo = new LingoDotDevEngine({ apiKey: config.lingoApiKey });
 
         // Use the official SDK 'localizeText' method with detected source language
         const result = await lingo.localizeText(text, {

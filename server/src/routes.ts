@@ -11,6 +11,7 @@ import {
     addTranslationRecord,
     getStoreStats
 } from './store.js';
+import { config } from './config.js';
 
 const router = Router();
 
@@ -249,7 +250,7 @@ router.get('/api/install-url', (req, res) => {
 
 // Debug endpoint (development only)
 router.get('/api/debug/stats', async (req, res) => {
-    if (process.env.NODE_ENV === 'production') {
+    if (config.isProd) {
         res.status(404).json({ error: 'Not found' });
         return;
     }

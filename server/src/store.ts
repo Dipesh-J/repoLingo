@@ -4,6 +4,7 @@
  */
 
 import { isDBConnected } from './db.js';
+import { config } from './config.js';
 import { 
     UserModel, 
     SessionModel, 
@@ -69,7 +70,7 @@ const memoryOAuthStates = new Map<string, Date>();
 
 // Session expiry time (7 days)
 const SESSION_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;
-const ALLOW_MEMORY_FALLBACK = process.env.NODE_ENV !== 'production';
+const ALLOW_MEMORY_FALLBACK = !config.isProd;
 
 // ==================== Helper Functions ====================
 
