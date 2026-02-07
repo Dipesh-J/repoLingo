@@ -1,45 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 
+import { config } from './config.js';
 import router from './routes.js';
 import { setupListeners } from './handlers.js';
 import { connectDB } from './db.js';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
-const isProd = process.env.NODE_ENV === 'production';
 
-if (isProd) {
-    const requiredEnv = [
-        'APP_ID',
-        'PRIVATE_KEY',
-        'WEBHOOK_SECRET',
-        'GITHUB_CLIENT_ID',
-        'GITHUB_CLIENT_SECRET',
-        'LINGO_API_KEY',
-        'MONGODB_URI',
-        'FRONTEND_URL',
-        'DASHBOARD_URL',
-        'JWT_SECRET'
-    ];
-    const missing = requiredEnv.filter((key) => !process.env[key]);
-    if (missing.length > 0) {
-        console.error(`Missing required environment variables: ${missing.join(', ')}`);
-        process.exit(1);
-    }
-}
-
+// Build CORS origins list
 const corsOrigins = Array.from(new Set([
-    FRONTEND_URL,
-    ...(process.env.CORS_ORIGINS ?? '')
-        .split(',')
-        .map((origin) => origin.trim())
-        .filter(Boolean)
+    config.frontendUrl,
+    ...config.corsOrigins
 ]));
 
 function matchWildcard(origin: string, pattern: string): boolean {
@@ -68,7 +41,7 @@ app.use(cors({
     credentials: true
 }));
 
-if (isProd) {
+if (config.isProd) {
     app.set('trust proxy', 1);
 }
 
@@ -95,15 +68,15 @@ app.get('/', (req, res) => {
 async function start() {
     await connectDB();
     
-    app.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
-        console.log(`Frontend URL: ${FRONTEND_URL}`);
+    app.listen(config.port, () => {
+        console.log(`Server is running on port ${config.port}`);
+        console.log(`Frontend URL: ${config.frontendUrl}`);
     });
 }
 
 start().catch((error) => {
     console.error(error);
-    if (isProd) {
+    if (config.isProd) {
         process.exit(1);
     }
 });

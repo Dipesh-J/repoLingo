@@ -6,6 +6,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getUserFromSession, getUserById, type User } from './store.js';
 import { extractTokenFromHeader, verifyToken } from './jwt.js';
+import { config } from './config.js';
 
 // Extend Express Request to include user
 declare global {
@@ -59,11 +60,10 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     if (!user) {
         // Clear cookie if it exists but is invalid
         if (req.cookies?.session) {
-            const IS_PROD = process.env.NODE_ENV === 'production';
             res.clearCookie('session', { 
                 path: '/',
-                sameSite: IS_PROD ? 'none' : 'lax',
-                secure: IS_PROD
+                sameSite: config.isProd ? 'none' : 'lax',
+                secure: config.isProd
             });
         }
         res.status(401).json({ error: 'Authentication required' });

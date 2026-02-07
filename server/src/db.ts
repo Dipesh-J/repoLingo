@@ -3,6 +3,7 @@
  */
 
 import mongoose from 'mongoose';
+import { config } from './config.js';
 
 let isConnected = false;
 
@@ -12,13 +13,9 @@ export async function connectDB(): Promise<void> {
         return;
     }
 
-    // Read URI lazily to ensure dotenv has been loaded
-    const MONGODB_URI = process.env.MONGODB_URI;
-
-    if (!MONGODB_URI) {
-        const isProd = process.env.NODE_ENV === 'production';
+    if (!config.mongodbUri) {
         console.error('MONGODB_URI is not defined in environment variables');
-        if (isProd) {
+        if (config.isProd) {
             throw new Error('MONGODB_URI is required in production');
         }
         console.log('Running in fallback mode (in-memory storage)');
@@ -26,7 +23,7 @@ export async function connectDB(): Promise<void> {
     }
 
     try {
-        await mongoose.connect(MONGODB_URI);
+        await mongoose.connect(config.mongodbUri);
         isConnected = true;
         console.log('MongoDB connected successfully');
     } catch (error) {

@@ -1,4 +1,5 @@
 import { githubApp } from './github.js';
+import { config } from './config.js';
 
 // Setup Event Listeners
 export function setupListeners() {
@@ -29,9 +30,9 @@ async function createTranslationCheckRun(octokit: any, payload: any) {
             output: {
                 title: "Translation Available",
                 summary: "Click 'Details' to view this PR in other languages.",
-                text: `[Open Translation Dashboard](${process.env.DASHBOARD_URL || 'http://localhost:5173'}/translate/${owner}/${repo}/pr/${payload.number})`
+                text: `[Open Translation Dashboard](${config.dashboardUrl}/translate/${owner}/${repo}/pr/${payload.number})`
             },
-            details_url: `${process.env.DASHBOARD_URL || 'http://localhost:5173'}/translate/${owner}/${repo}/pr/${payload.number}`
+            details_url: `${config.dashboardUrl}/translate/${owner}/${repo}/pr/${payload.number}`
         });
         console.log("Check Run created successfully");
     } catch (error) {
