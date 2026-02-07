@@ -40,25 +40,39 @@ export default function Navbar() {
             <Link to="/" style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '12px',
                 textDecoration: 'none',
                 color: 'var(--github-text-primary)'
             }}>
-                <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, var(--color-primary-green), #0ea5e9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 700,
-                    fontSize: '16px',
-                    color: 'white'
-                }}>
-                    RL
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '40px'
+                    }}
+                >
+                    <img
+                        src="/repoLingo.svg"
+                        alt="repoLingo Logo"
+                        style={{ height: '36px' }}
+                    />
+                </motion.div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{
+                        fontWeight: 700,
+                        fontSize: '20px',
+                        letterSpacing: '-0.5px',
+                        background: 'linear-gradient(90deg, #fff, #93DE85)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>
+                        repoLingo
+                    </span>
                 </div>
-                <span style={{ fontWeight: 600, fontSize: '18px' }}>repoLingo</span>
             </Link>
 
             {/* Navigation Links (when authenticated) */}
