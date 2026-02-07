@@ -63,6 +63,7 @@ export default function TranslationPage() {
   const { owner, repo, number } = useParams();
   const { preferences } = useAuth();
   const [prData, setPrData] = useState<PRData | null>(null);
+  const [prError, setPrError] = useState<string | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -111,6 +112,27 @@ export default function TranslationPage() {
         if (res.ok) {
           const data = await res.json();
           setPrData(data);
+          setPrError(null);
+        } else {
+          // Handle non-OK responses
+          const errorText = await res.text();
+          let errorMessage = `Error ${res.status}: ${res.statusText}`;
+          try {
+            const errorJson = JSON.parse(errorText);
+            if (errorJson.error) {
+              errorMessage = errorJson.error;
+            } else if (errorJson.message) {
+              errorMessage = errorJson.message;
+            } else {
+              errorMessage = `Error ${res.status}: ${errorText}`;
+            }
+          } catch (e) {
+            // If parsing fails, stick with the status code or raw text if small enough
+            if (errorText && errorText.length < 200) {
+              errorMessage = `Error ${res.status}: ${errorText}`;
+            }
+          }
+          setPrError(errorMessage);
         }
       } catch (err) {
         console.error(err);
@@ -484,7 +506,9 @@ export default function TranslationPage() {
                 ) : prData ? (
                   <MarkdownRenderer content={prData.body} />
                 ) : (
-                  <div style={{ color: 'var(--github-text-muted)', textAlign: 'center', padding: '40px' }}>Failed to load content</div>
+                  <div style={{ color: 'var(--github-text-muted)', textAlign: 'center', padding: '40px' }}>
+                    {prError || "Failed to load content"}
+                  </div>
                 )
               ) : (
                 // Comments View
