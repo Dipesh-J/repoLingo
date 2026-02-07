@@ -28,6 +28,8 @@ export interface User {
     email: string | null;
     avatarUrl: string;
     accessToken: string;
+    refreshToken: string | null;
+    tokenExpiresAt: Date | null;
     createdAt: Date;
     lastLoginAt: Date;
 }
@@ -101,6 +103,8 @@ function toUser(doc: IUser): User {
         email: doc.email,
         avatarUrl: doc.avatarUrl,
         accessToken: doc.accessToken,
+        refreshToken: doc.refreshToken,
+        tokenExpiresAt: doc.tokenExpiresAt,
         createdAt: doc.createdAt,
         lastLoginAt: doc.lastLoginAt
     };
@@ -145,6 +149,8 @@ export async function createUser(data: Omit<User, 'id' | 'createdAt' | 'lastLogi
                 userDoc.email = data.email;
                 userDoc.avatarUrl = data.avatarUrl;
                 userDoc.accessToken = data.accessToken;
+                userDoc.refreshToken = data.refreshToken;
+                userDoc.tokenExpiresAt = data.tokenExpiresAt;
                 userDoc.lastLoginAt = new Date();
                 await userDoc.save();
             } else {
@@ -170,7 +176,9 @@ export async function createUser(data: Omit<User, 'id' | 'createdAt' | 'lastLogi
                             name: data.name,
                             email: data.email,
                             avatarUrl: data.avatarUrl,
-                            accessToken: data.accessToken
+                            accessToken: data.accessToken,
+                            refreshToken: data.refreshToken,
+                            tokenExpiresAt: data.tokenExpiresAt
                         }], { session });
                         
                         const createdUser = createdUsers[0];
@@ -201,7 +209,9 @@ export async function createUser(data: Omit<User, 'id' | 'createdAt' | 'lastLogi
                         name: data.name,
                         email: data.email,
                         avatarUrl: data.avatarUrl,
-                        accessToken: data.accessToken
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken,
+                        tokenExpiresAt: data.tokenExpiresAt
                     });
 
                     try {
@@ -290,6 +300,50 @@ export async function getUserByGithubId(githubId: number): Promise<User | undefi
     assertMemoryFallbackAllowed('getUserByGithubId');
     const id = memoryUsersByGithubId.get(githubId);
     return id ? memoryUsers.get(id) : undefined;
+}
+
+/**
+ * Update user's access and refresh tokens after a token refresh
+ */
+export async function updateUserTokens(
+    userId: string,
+    accessToken: string,
+    refreshToken: string | null,
+    tokenExpiresAt: Date | null
+): Promise<User | undefined> {
+    if (isDBConnected()) {
+        try {
+            const userDoc = await UserModel.findByIdAndUpdate(
+                userId,
+                {
+                    $set: {
+                        accessToken,
+                        refreshToken,
+                        tokenExpiresAt
+                    }
+                },
+                { new: true }
+            );
+            return userDoc ? toUser(userDoc) : undefined;
+        } catch (error) {
+            console.error('MongoDB updateUserTokens error:', error);
+        }
+    }
+
+    assertMemoryFallbackAllowed('updateUserTokens');
+
+    // In-memory fallback
+    const user = memoryUsers.get(userId);
+    if (!user) return undefined;
+
+    const updated: User = {
+        ...user,
+        accessToken,
+        refreshToken,
+        tokenExpiresAt
+    };
+    memoryUsers.set(userId, updated);
+    return updated;
 }
 
 // ==================== OAuth State Functions ====================

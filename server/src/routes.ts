@@ -62,7 +62,19 @@ router.get('/api/installations', requireAuth, async (req, res) => {
         }
 
         if (!response.ok) {
-            console.error('Failed to fetch installations:', response.status);
+            const errorBody = await response.text().catch(() => '');
+            console.error('Failed to fetch installations:', response.status, errorBody);
+            
+            // If 401, the token is likely invalid (even after middleware refresh attempt)
+            if (response.status === 401) {
+                res.status(401).json({ 
+                    error: 'GitHub token is invalid', 
+                    tokenExpired: true,
+                    message: 'Please log in again to reconnect your GitHub account.'
+                });
+                return;
+            }
+            
             res.status(response.status).json({ error: 'Failed to fetch installations' });
             return;
         }

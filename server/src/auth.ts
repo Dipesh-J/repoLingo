@@ -4,7 +4,7 @@
 
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession, getUserById } from './store.js';
+import { createOAuthState, consumeOAuthState, createUser, createSession, deleteSession, getUserFromSession, getUserById, updateUserTokens, type User } from './store.js';
 import { signToken, extractTokenFromHeader, verifyToken } from './jwt.js';
 import { config } from './config.js';
 
@@ -119,6 +119,8 @@ export async function handleOAuthCallback(req: Request, res: Response) {
 
         const tokenData = await tokenResponse.json() as {
             access_token?: string;
+            refresh_token?: string;
+            expires_in?: number;
             error?: string;
             error_description?: string;
         };
@@ -130,6 +132,11 @@ export async function handleOAuthCallback(req: Request, res: Response) {
         }
 
         const accessToken = tokenData.access_token;
+        const refreshToken = tokenData.refresh_token || null;
+        // Calculate token expiry time (GitHub tokens expire in 8 hours by default)
+        const tokenExpiresAt = tokenData.expires_in 
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : null;
 
         // Fetch user profile from GitHub with timeout
         const userController = new AbortController();
@@ -177,7 +184,9 @@ export async function handleOAuthCallback(req: Request, res: Response) {
             name: githubUser.name,
             email: githubUser.email,
             avatarUrl: githubUser.avatar_url,
-            accessToken
+            accessToken,
+            refreshToken,
+            tokenExpiresAt
         });
 
         // Generate JWT token for cross-origin auth
@@ -290,4 +299,104 @@ export async function getCurrentUser(req: Request, res: Response) {
  */
 export function getInstallUrl(): string {
     return `https://github.com/apps/${config.githubAppSlug}/installations/new`;
+}
+
+/**
+ * Check if a user's access token is expired or about to expire
+ * Returns true if token will expire within the next 5 minutes
+ */
+export function isTokenExpired(user: User): boolean {
+    if (!user.tokenExpiresAt) {
+        // No expiry set - assume it's a non-expiring token or unknown
+        return false;
+    }
+    // Consider token expired if it expires within 5 minutes
+    const expiryBuffer = 5 * 60 * 1000; // 5 minutes
+    return Date.now() + expiryBuffer >= user.tokenExpiresAt.getTime();
+}
+
+/**
+ * Refresh a user's access token using their refresh token
+ * Returns updated user on success, null if refresh fails
+ */
+export async function refreshUserToken(user: User): Promise<User | null> {
+    if (!user.refreshToken) {
+        console.error('No refresh token available for user:', user.id);
+        return null;
+    }
+
+    if (!config.githubClientId || !config.githubClientSecret) {
+        console.error('GitHub OAuth not configured for token refresh');
+        return null;
+    }
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+        let response: globalThis.Response;
+        try {
+            response = await fetch('https://github.com/login/oauth/access_token', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    client_id: config.githubClientId,
+                    client_secret: config.githubClientSecret,
+                    grant_type: 'refresh_token',
+                    refresh_token: user.refreshToken
+                }),
+                signal: controller.signal
+            });
+        } catch (fetchError) {
+            if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+                console.error('Token refresh timed out');
+                return null;
+            }
+            throw fetchError;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+        const tokenData = await response.json() as {
+            access_token?: string;
+            refresh_token?: string;
+            expires_in?: number;
+            error?: string;
+            error_description?: string;
+        };
+
+        if (tokenData.error || !tokenData.access_token) {
+            console.error('Token refresh failed:', tokenData.error_description || tokenData.error);
+            return null;
+        }
+
+        const newAccessToken = tokenData.access_token;
+        const newRefreshToken = tokenData.refresh_token || user.refreshToken;
+        const newTokenExpiresAt = tokenData.expires_in
+            ? new Date(Date.now() + tokenData.expires_in * 1000)
+            : null;
+
+        // Update tokens in database
+        const updatedUser = await updateUserTokens(
+            user.id,
+            newAccessToken,
+            newRefreshToken,
+            newTokenExpiresAt
+        );
+
+        if (!updatedUser) {
+            console.error('Failed to update user tokens in database');
+            return null;
+        }
+
+        console.log(`Successfully refreshed tokens for user: ${user.login}`);
+        return updatedUser;
+
+    } catch (error) {
+        console.error('Error refreshing user token:', error);
+        return null;
+    }
 }
