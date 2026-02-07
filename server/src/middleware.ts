@@ -7,6 +7,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getUserFromSession, getUserById, type User } from './store.js';
 import { extractTokenFromHeader, verifyToken } from './jwt.js';
 import { config } from './config.js';
+import { isTokenExpired, refreshUserToken } from './auth.js';
 
 // Extend Express Request to include user
 declare global {
@@ -46,6 +47,7 @@ async function getUserFromCookie(req: Request): Promise<User | undefined> {
 /**
  * Middleware that requires authentication.
  * Supports both JWT tokens (Authorization header) and session cookies.
+ * Automatically refreshes GitHub access tokens if they are about to expire.
  * Returns 401 if not authenticated.
  */
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -68,6 +70,26 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         }
         res.status(401).json({ error: 'Authentication required' });
         return;
+    }
+
+    // Check if token is about to expire and refresh if needed
+    if (isTokenExpired(user)) {
+        console.log(`Token expired or expiring soon for user: ${user.login}, attempting refresh...`);
+        const refreshedUser = await refreshUserToken(user);
+        
+        if (refreshedUser) {
+            // Use refreshed user with new access token
+            user = refreshedUser;
+        } else {
+            // Refresh failed - user needs to re-authenticate
+            console.error(`Token refresh failed for user: ${user.login}`);
+            res.status(401).json({ 
+                error: 'Token expired', 
+                tokenExpired: true,
+                message: 'Your session has expired. Please log in again.'
+            });
+            return;
+        }
     }
 
     // Attach user to request

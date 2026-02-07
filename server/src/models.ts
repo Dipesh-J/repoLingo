@@ -13,6 +13,8 @@ export interface IUser extends Document {
     email: string | null;
     avatarUrl: string;
     accessToken: string;
+    refreshToken: string | null;
+    tokenExpiresAt: Date | null;
     createdAt: Date;
     lastLoginAt: Date;
 }
@@ -24,6 +26,8 @@ const UserSchema = new Schema<IUser>({
     email: { type: String, default: null },
     avatarUrl: { type: String, required: true },
     accessToken: { type: String, required: true },
+    refreshToken: { type: String, default: null },
+    tokenExpiresAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now },
     lastLoginAt: { type: Date, default: Date.now }
 });
