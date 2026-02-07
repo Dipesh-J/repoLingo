@@ -52,4 +52,4 @@ jobs:
             --platform managed \
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
-            --set-env-vars NODE_ENV=production,FRONTEND_URL=https://repo-lingo-client.vercel.app
+            --set-env-vars NODE_ENV=production
