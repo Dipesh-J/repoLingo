@@ -7,8 +7,9 @@ if (!config.appId || !config.privateKey) {
 
 export const githubApp = new App({
   appId: config.appId || "0",
-  privateKey: config.privateKey ? config.privateKey.replace(/\\n/g, '\n') : "INVALID_KEY",
+  privateKey: config.privateKey || "INVALID_KEY",
   webhooks: {
     secret: config.webhookSecret,
   },
 });
+

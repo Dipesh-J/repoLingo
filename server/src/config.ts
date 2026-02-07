@@ -18,6 +18,30 @@ function getEnv(key: string, fallback?: string): string {
     return '';
 }
 
+// Helper to decode PEM key - supports base64-encoded or escaped newlines
+function decodePrivateKey(key: string): string {
+    if (!key) return '';
+    
+    // If it already looks like a PEM key with proper headers, just fix newlines
+    if (key.includes('-----BEGIN')) {
+        return key.replace(/\\n/g, '\n');
+    }
+    
+    // Otherwise, assume it's base64 encoded
+    try {
+        const decoded = Buffer.from(key, 'base64').toString('utf8');
+        // Verify it decoded to a valid PEM
+        if (decoded.includes('-----BEGIN')) {
+            return decoded;
+        }
+    } catch (e) {
+        console.error('Failed to decode private key from base64:', e);
+    }
+    
+    // Last resort - return as-is with newline fixes
+    return key.replace(/\\n/g, '\n');
+}
+
 // Determine environment
 const nodeEnv = getEnv('NODE_ENV', 'development');
 const isProd = nodeEnv === 'production';
@@ -41,7 +65,7 @@ export const config = {
 
     // GitHub App
     appId: getEnv('APP_ID'),
-    privateKey: getEnv('PRIVATE_KEY'),
+    privateKey: decodePrivateKey(getEnv('PRIVATE_KEY')),
     webhookSecret: getEnv('WEBHOOK_SECRET', 'development'),
     githubAppSlug: getEnv('GITHUB_APP_SLUG', 'repo-lingo'),
 
