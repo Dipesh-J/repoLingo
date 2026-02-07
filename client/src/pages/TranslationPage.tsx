@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import { useAuth, authFetch } from '../context/AuthContext';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -14,7 +14,7 @@ import SkeletonLoader from '../components/SkeletonLoader';
 import TabNavigation from '../components/TabNavigation';
 import CommentCard from '../components/CommentCard';
 
-const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost:3000') + '/api';
+
 
 // GitHub-style syntax highlighter theme
 const githubCodeTheme = {
@@ -57,8 +57,11 @@ interface Comment {
   created_at: string;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
+
 export default function TranslationPage() {
   const { owner, repo, number } = useParams();
+  const { preferences } = useAuth();
   const [prData, setPrData] = useState<PRData | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,8 +73,15 @@ export default function TranslationPage() {
   const [translatedComments, setTranslatedComments] = useState<Record<number, string>>({});
 
   const [translating, setTranslating] = useState(false);
-  const [targetLang, setTargetLang] = useState('en');
+  const [targetLang, setTargetLang] = useState(preferences?.defaultTargetLanguage || 'en');
   const [selectedCommentIds, setSelectedCommentIds] = useState<Set<number>>(new Set());
+
+  // Update target language when preferences load
+  useEffect(() => {
+    if (preferences?.defaultTargetLanguage) {
+      setTargetLang(preferences.defaultTargetLanguage);
+    }
+  }, [preferences?.defaultTargetLanguage]);
 
   // Selection handlers
   const handleCommentSelect = (id: number, selected: boolean) => {
@@ -97,8 +107,11 @@ export default function TranslationPage() {
   useEffect(() => {
     async function fetchPR() {
       try {
-        const res = await axios.get(`${API_BASE}/pr/${owner}/${repo}/${number}`);
-        setPrData(res.data);
+        const res = await authFetch(`${API_BASE_URL}/api/pr/${owner}/${repo}/${number}`);
+        if (res.ok) {
+          const data = await res.json();
+          setPrData(data);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -114,8 +127,11 @@ export default function TranslationPage() {
       async function fetchComments() {
         setLoadingComments(true);
         try {
-          const res = await axios.get(`${API_BASE}/pr/${owner}/${repo}/${number}/comments`);
-          setComments(res.data);
+          const res = await authFetch(`${API_BASE_URL}/api/pr/${owner}/${repo}/${number}/comments`);
+          if (res.ok) {
+            const data = await res.json();
+            setComments(data);
+          }
         } catch (err) {
           console.error("Error fetching comments", err);
         } finally {
@@ -140,12 +156,19 @@ export default function TranslationPage() {
       if (!prData?.body) return;
       setTranslating(true);
       try {
-        const res = await axios.post(`${API_BASE}/translate`, {
-          text: prData.body,
-          targetLanguage: targetLang,
-          prInfo
-        }, { withCredentials: true });
-        setTranslated(res.data.translation);
+        const res = await authFetch(`${API_BASE_URL}/api/translate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: prData.body,
+            targetLanguage: targetLang,
+            prInfo
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setTranslated(data.translation);
+        }
       } catch (err) {
         console.error('Translation error:', err);
       } finally {
@@ -159,18 +182,28 @@ export default function TranslationPage() {
         // Translate only selected comments concurrently
         const selectedComments = comments.filter(c => selectedCommentIds.has(c.id));
         const promises = selectedComments.map(async (comment) => {
-          const res = await axios.post(`${API_BASE}/translate`, {
-            text: comment.body,
-            targetLanguage: targetLang,
-            prInfo: { ...prInfo, contentType: 'comment' }
-          }, { withCredentials: true });
-          return { id: comment.id, text: res.data.translation };
+          const res = await authFetch(`${API_BASE_URL}/api/translate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: comment.body,
+              targetLanguage: targetLang,
+              prInfo: { ...prInfo, contentType: 'comment' }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return { id: comment.id, text: data.translation };
+          }
+          return { id: comment.id, text: '' };
         });
 
         const results = await Promise.all(promises);
         const newTranslatedComments = { ...translatedComments };
         results.forEach(r => {
-          newTranslatedComments[r.id] = r.text;
+          if (r.text) {
+            newTranslatedComments[r.id] = r.text;
+          }
         });
         setTranslatedComments(newTranslatedComments);
 
