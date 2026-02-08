@@ -4,6 +4,7 @@ import { FaGithub, FaArrowRight, FaCheck } from 'react-icons/fa';
 import Typewriter from '../components/Typewriter';
 import { GlobeIcon, BrainIcon, MergeIcon, DownloadIcon, PullRequestIcon, SparklesIcon } from '../components/Icons';
 import LanguageGlobe from '../components/LanguageGlobe';
+import NetworkMesh from '../components/NetworkMesh';
 
 export default function LandingPage() {
     const { login, error, loading } = useAuth();
@@ -36,8 +37,11 @@ export default function LandingPage() {
         <div style={{
             minHeight: '100vh',
             background: 'var(--github-bg-primary)',
-            color: 'var(--github-text-primary)'
+            color: 'var(--github-text-primary)',
+            position: 'relative',
         }}>
+            {/* Full-page Network Mesh Background */}
+            <NetworkMesh />
             {/* Hero Section */}
             <section style={{
                 padding: '80px 24px',
