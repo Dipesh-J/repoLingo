@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { FaPlus, FaGithub, FaHistory, FaGlobeAmericas, FaSync } from 'react-icons/fa';
+import { FaPlus, FaGithub, FaHistory, FaGlobeAmericas, FaSync, FaSearch } from 'react-icons/fa';
 import HowItWorks from '../components/HowItWorks';
 import RepoCard from '../components/RepoCard';
 import TranslationHistoryCard from '../components/TranslationHistoryCard';
@@ -15,6 +15,9 @@ export default function DashboardPage() {
     // Loading states for refresh buttons
     const [refreshingRepos, setRefreshingRepos] = useState(false);
     const [refreshingHistory, setRefreshingHistory] = useState(false);
+
+    // Search state for repositories
+    const [repoSearch, setRepoSearch] = useState('');
 
     // Redirect to landing if not authenticated
     useEffect(() => {
@@ -152,15 +155,53 @@ export default function DashboardPage() {
                             borderBottom: '1px solid var(--glass-border)',
                             display: 'flex',
                             justifyContent: 'space-between',
-                            alignItems: 'center'
+                            alignItems: 'center',
+                            gap: '16px',
+                            overflow: 'hidden'
                         }}>
-                            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0 }}>
+                            <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, whiteSpace: 'nowrap' }}>
                                 Your Repositories
                             </h2>
-                            <RefreshButton
-                                onClick={handleRefreshRepos}
-                                loading={refreshingRepos}
-                            />
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                flex: '0 1 auto',
+                                minWidth: 0,
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '6px 12px',
+                                    backgroundColor: 'var(--github-bg-primary)',
+                                    border: '1px solid var(--github-border)',
+                                    borderRadius: '6px',
+                                    flex: 1
+                                }}>
+                                    <FaSearch size={12} color="var(--github-text-muted)" />
+                                    <input
+                                        type="text"
+                                        value={repoSearch}
+                                        onChange={(e) => setRepoSearch(e.target.value)}
+                                        placeholder="Search repos..."
+                                        style={{
+                                            flex: 1,
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--github-text-primary)',
+                                            fontSize: '14px',
+                                            outline: 'none',
+                                            minWidth: 0
+                                        }}
+                                    />
+                                </div>
+                                <RefreshButton
+                                    onClick={handleRefreshRepos}
+                                    loading={refreshingRepos}
+                                />
+                            </div>
                         </div>
 
                         <div style={{ padding: '16px' }}>
@@ -224,19 +265,23 @@ export default function DashboardPage() {
                                     gap: '12px'
                                 }}>
                                     {installations.map(installation => (
-                                        installation.repositories?.map(repo => (
-                                            <RepoCard
-                                                key={repo.id}
-                                                repo={repo}
-                                                accountLogin={installation.accountLogin}
-                                                accountAvatarUrl={installation.accountAvatarUrl}
-                                                translationCount={stats?.byRepo[repo.fullName] || 0}
-                                            />
-                                        ))
+                                        installation.repositories
+                                            ?.filter(repo =>
+                                                repo.fullName.toLowerCase().includes(repoSearch.toLowerCase())
+                                            )
+                                            .map(repo => (
+                                                <RepoCard
+                                                    key={repo.id}
+                                                    repo={repo}
+                                                    accountLogin={installation.accountLogin}
+                                                    accountAvatarUrl={installation.accountAvatarUrl}
+                                                    translationCount={stats?.byRepo[repo.fullName] || 0}
+                                                />
+                                            ))
                                     ))}
 
                                     {/* Add More Card */}
-                                    {installUrl && (
+                                    {installUrl && !repoSearch && (
                                         <a
                                             href={installUrl}
                                             style={{
@@ -361,7 +406,10 @@ function RefreshButton({ onClick, loading }: { onClick: () => void; loading: boo
                 color: 'var(--color-primary-green)',
                 cursor: loading ? 'wait' : 'pointer',
                 transition: 'all 0.2s',
-                opacity: loading ? 0.8 : 1
+                opacity: loading ? 0.8 : 1,
+                minWidth: '95px',
+                whiteSpace: 'nowrap' as const,
+                flexShrink: 0
             }}
             onMouseEnter={(e) => {
                 if (!loading) {
