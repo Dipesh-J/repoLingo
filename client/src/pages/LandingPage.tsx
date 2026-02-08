@@ -4,6 +4,15 @@ import { FaGithub, FaArrowRight, FaCheck } from 'react-icons/fa';
 import Typewriter from '../components/Typewriter';
 import { GlobeIcon, BrainIcon, MergeIcon, DownloadIcon, PullRequestIcon, SparklesIcon } from '../components/Icons';
 
+/**
+ * Render the landing page that presents the hero, "How It Works" steps, feature highlights,
+ * supported languages preview, final call-to-action, and footer.
+ *
+ * The component reads authentication state from the auth context to bind the sign-in action
+ * to CTAs and to display error and loading states for those controls.
+ *
+ * @returns The React element representing the full landing page UI.
+ */
 export default function LandingPage() {
     const { login, error, loading } = useAuth();
 

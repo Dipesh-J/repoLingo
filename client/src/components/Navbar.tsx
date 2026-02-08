@@ -5,6 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import { FaGithub, FaChevronDown, FaSignOutAlt, FaCog, FaHome } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * Render the top navigation bar with brand logo, optional center navigation links, and user account controls.
+ *
+ * Displays dashboard/settings links when authenticated, shows a user menu with account actions (including sign out) or a GitHub sign-in button when unauthenticated, and closes the user dropdown when clicking outside it.
+ *
+ * @returns The navbar element containing the logo, centered navigation links (when signed in), and the user area (loading placeholder, user menu, or sign-in button).
+ */
 export default function Navbar() {
     const { user, login, logout, loading } = useAuth();
     const [menuOpen, setMenuOpen] = useState(false);
