@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import logoIcon from '../assets/logo-icon.svg';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaGithub, FaChevronDown, FaSignOutAlt, FaCog, FaHome } from 'react-icons/fa';
@@ -56,9 +57,9 @@ export default function Navbar() {
                     }}
                 >
                     <img
-                        src="/repoLingo.svg"
+                        src={logoIcon}
                         alt="repoLingo Logo"
-                        style={{ height: '36px' }}
+                        style={{ height: '32px' }}
                     />
                 </motion.div>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>

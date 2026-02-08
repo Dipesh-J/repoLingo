@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon --exec tsx src/index.ts",
+    "proxy": "set -a; . ./.env; set +a; smee -u ${WEBHOOK_PROXY_URL} -t http://localhost:3000/webhooks/github",
     "build": "tsc"
   },
   "keywords": [],

@@ -42,15 +42,15 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 }
 
 function AppContent() {
-    const { user, loading } = useAuth();
+    const { user } = useAuth();
 
     return (
         <div style={{
             minHeight: '100vh',
             backgroundColor: 'var(--github-bg-primary)'
         }}>
-            {/* Only show Navbar on authenticated pages or when user is logged in */}
-            {(user || loading) && <Navbar />}
+            {/* Show Navbar on all pages */}
+            <Navbar />
 
             <Routes>
                 {/* Public Routes */}

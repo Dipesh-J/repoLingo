@@ -1,33 +1,34 @@
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { FaGithub, FaLanguage, FaRocket, FaComments, FaArrowRight, FaCheck } from 'react-icons/fa';
+import { FaGithub, FaArrowRight, FaCheck } from 'react-icons/fa';
 import Typewriter from '../components/Typewriter';
+import { GlobeIcon, BrainIcon, MergeIcon, DownloadIcon, PullRequestIcon, SparklesIcon } from '../components/Icons';
 
 export default function LandingPage() {
     const { login, error, loading } = useAuth();
 
     const features = [
         {
-            icon: <FaLanguage size={24} />,
+            icon: GlobeIcon,
             title: 'Multi-Language Support',
             description: 'Translate PR descriptions and comments into 80+ languages instantly.'
         },
         {
-            icon: <FaComments size={24} />,
+            icon: BrainIcon,
             title: 'Context-Aware Translation',
             description: 'Preserves code blocks, markdown formatting, and technical terms.'
         },
         {
-            icon: <FaRocket size={24} />,
+            icon: MergeIcon,
             title: 'Seamless Integration',
             description: 'Works automatically with your GitHub workflow. Just install and go.'
         }
     ];
 
     const steps = [
-        { step: 1, title: 'Install the App', description: 'Add repoLingo to your repositories' },
-        { step: 2, title: 'Open a PR', description: 'Create or view any Pull Request' },
-        { step: 3, title: 'Translate', description: 'Use the translation dashboard link' }
+        { step: 1, title: 'Install the App', description: 'Add repoLingo to your repositories', icon: DownloadIcon },
+        { step: 2, title: 'Open a PR', description: 'Create or view any Pull Request', icon: PullRequestIcon },
+        { step: 3, title: 'Translate', description: 'Use the translation dashboard link', icon: SparklesIcon }
     ];
 
     return (
@@ -195,23 +196,48 @@ export default function LandingPage() {
                                     background: 'var(--glass-bg)',
                                     border: '1px solid var(--glass-border)',
                                     borderRadius: '12px',
-                                    position: 'relative'
+                                    position: 'relative',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    textAlign: 'center'
                                 }}
                             >
                                 <div style={{
-                                    width: '48px',
-                                    height: '48px',
-                                    borderRadius: '50%',
-                                    background: 'linear-gradient(135deg, var(--color-primary-green), #1a7f37)',
+                                    marginBottom: '24px',
+                                    position: 'relative',
                                     display: 'flex',
-                                    alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontSize: '20px',
-                                    fontWeight: 700,
-                                    color: 'white',
-                                    marginBottom: '20px'
+                                    alignItems: 'center',
+                                    height: '100px',
+                                    width: '100px',
+                                    background: 'rgba(35, 134, 54, 0.1)',
+                                    borderRadius: '50%',
+                                    border: '1px solid var(--color-primary-green)'
                                 }}>
-                                    {item.step}
+                                    <item.icon
+                                        width={48}
+                                        height={48}
+                                        color="var(--color-primary-green)"
+                                    />
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        right: 0,
+                                        width: '28px',
+                                        height: '28px',
+                                        borderRadius: '50%',
+                                        background: 'var(--color-primary-green)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '14px',
+                                        fontWeight: 700,
+                                        color: '#000',
+                                        border: '2px solid var(--github-bg-secondary)'
+                                    }}>
+                                        {item.step}
+                                    </div>
                                 </div>
                                 <h3 style={{
                                     fontSize: '18px',
@@ -267,17 +293,20 @@ export default function LandingPage() {
                             }}
                         >
                             <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: 'rgba(147, 222, 133, 0.1)',
-                                color: 'var(--color-primary-green)',
+                                width: '60px',
+                                height: '60px',
+                                marginBottom: '24px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginBottom: '20px'
+                                background: 'rgba(35, 134, 54, 0.1)',
+                                borderRadius: '12px',
+                                color: 'var(--color-primary-green)'
                             }}>
-                                {feature.icon}
+                                <feature.icon
+                                    width={32}
+                                    height={32}
+                                />
                             </div>
                             <h3 style={{
                                 fontSize: '18px',
