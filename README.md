@@ -39,22 +39,15 @@
 
 ## 🎬 Demo Videos
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <strong>What is repoLingo?</strong><br><br>
-      <a href="https://www.loom.com/share/4e3f467cd0084c6da27346c5c0aa5762">
-        <img src="https://cdn.loom.com/sessions/thumbnails/4e3f467cd0084c6da27346c5c0aa5762-with-play.gif" alt="What is repoLingo?" width="100%">
-      </a>
-    </td>
-    <td align="center" width="50%">
-      <strong>How to Install</strong><br><br>
-      <a href="https://www.loom.com/share/766173e24b694f61a56f069833ea5b3b">
-        <img src="https://cdn.loom.com/sessions/thumbnails/766173e24b694f61a56f069833ea5b3b-with-play.gif" alt="Installation Guide" width="100%">
-      </a>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="https://www.loom.com/share/4e3f467cd0084c6da27346c5c0aa5762">
+    <img src="https://img.shields.io/badge/▶_What_is_repoLingo%3F-Watch_Demo-FF5722?style=for-the-badge&logo=loom&logoColor=white" alt="Demo Video">
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://www.loom.com/share/766173e24b694f61a56f069833ea5b3b">
+    <img src="https://img.shields.io/badge/▶_Installation_Guide-Watch_Tutorial-4CAF50?style=for-the-badge&logo=loom&logoColor=white" alt="Installation Video">
+  </a>
+</p>
 
 ---
 
