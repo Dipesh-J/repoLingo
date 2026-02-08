@@ -69,7 +69,7 @@ typings/
 
 # gatsby files
 .cache/
-public/
+# Note: Removed public/ rule - client/public/ needs to be tracked for static assets like favicon
 
 # vuepress build output
 .vuepress/dist
