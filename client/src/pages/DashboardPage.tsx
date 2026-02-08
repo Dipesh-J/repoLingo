@@ -156,7 +156,8 @@ export default function DashboardPage() {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            gap: '16px'
+                            gap: '16px',
+                            overflow: 'hidden'
                         }}>
                             <h2 style={{ fontSize: '16px', fontWeight: 600, margin: 0, whiteSpace: 'nowrap' }}>
                                 Your Repositories
@@ -165,8 +166,9 @@ export default function DashboardPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '12px',
-                                flex: 1,
-                                maxWidth: '300px'
+                                flex: '0 1 auto',
+                                minWidth: 0,
+                                overflow: 'hidden'
                             }}>
                                 <div style={{
                                     display: 'flex',
@@ -404,7 +406,10 @@ function RefreshButton({ onClick, loading }: { onClick: () => void; loading: boo
                 color: 'var(--color-primary-green)',
                 cursor: loading ? 'wait' : 'pointer',
                 transition: 'all 0.2s',
-                opacity: loading ? 0.8 : 1
+                opacity: loading ? 0.8 : 1,
+                minWidth: '95px',
+                whiteSpace: 'nowrap' as const,
+                flexShrink: 0
             }}
             onMouseEnter={(e) => {
                 if (!loading) {

@@ -7,6 +7,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { FaArrowRight, FaSpinner, FaExchangeAlt, FaCheckSquare, FaRegSquare } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import Lottie from 'lottie-react';
+import translateAnimation from '../assets/translate-animation.json';
 
 import LanguageSelector from '../components/LanguageSelector';
 import PRMetadataHeader from '../components/PRMetadataHeader';
@@ -589,7 +591,11 @@ export default function TranslationPage() {
                   gap: '16px',
                   color: 'var(--github-text-secondary)'
                 }}>
-                  <FaSpinner size={32} style={{ animation: 'spin 1.5s linear infinite', opacity: 0.7 }} />
+                  <Lottie
+                    animationData={translateAnimation}
+                    loop={true}
+                    style={{ width: 150, height: 150 }}
+                  />
                   <p>Translating {activeTab === 'description' ? 'description' : 'conversation'}...</p>
                 </div>
               ) : (

@@ -1,8 +1,8 @@
 :root {
   /* GitHub Dark Mode Color Palette */
-  --github-bg-primary: #0d1117;
-  --github-bg-secondary: #161b22;
-  --github-bg-tertiary: #21262d;
+  --github-bg-primary: #000000;
+  --github-bg-secondary: #0a0a0a;
+  --github-bg-tertiary: #111111;
   --github-border: #30363d;
   --github-border-muted: #21262d;
 
@@ -19,7 +19,7 @@
   --color-green-glow: rgba(35, 134, 54, 0.4);
 
   /* Glassmorphism Variables */
-  --glass-bg: rgba(22, 27, 34, 0.7);
+  --glass-bg: rgba(0, 0, 0, 0.7);
   --glass-border: rgba(48, 54, 61, 0.6);
   --glass-highlight: rgba(255, 255, 255, 0.05);
   --glass-shadow: 0 8px 32px 0 rgba(76, 221, 55, 0.1);
@@ -29,7 +29,7 @@
   font-weight: 400;
 
   color: var(--github-text-primary);
-  background-color: #0d1117;
+  background-color: #000000;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -50,7 +50,7 @@
 ::-webkit-scrollbar-thumb {
   background: #30363d;
   border-radius: 5px;
-  border: 2px solid #0d1117;
+  border: 2px solid #000000;
   /* Creates padding effect */
 }
 
@@ -64,7 +64,7 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #0d1117;
+  background-color: #000000;
   background-image:
     radial-gradient(circle at 0% 0%, rgba(56, 139, 253, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 100% 100%, rgba(35, 134, 54, 0.1) 0%, transparent 50%);
