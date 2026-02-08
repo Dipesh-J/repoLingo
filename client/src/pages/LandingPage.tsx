@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FaGithub, FaArrowRight, FaCheck } from 'react-icons/fa';
 import Typewriter from '../components/Typewriter';
 import { GlobeIcon, BrainIcon, MergeIcon, DownloadIcon, PullRequestIcon, SparklesIcon } from '../components/Icons';
+import LanguageGlobe from '../components/LanguageGlobe';
 
 export default function LandingPage() {
     const { login, error, loading } = useAuth();
@@ -42,12 +43,18 @@ export default function LandingPage() {
                 padding: '80px 24px',
                 maxWidth: '1200px',
                 margin: '0 auto',
-                textAlign: 'center'
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+                gap: '40px',
+                alignItems: 'center',
+                minHeight: '600px',
             }}>
+                {/* Left side - Text Content */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.6 }}
+                    style={{ textAlign: 'left' }}
                 >
                     {/* Badge */}
                     <div style={{
@@ -68,7 +75,7 @@ export default function LandingPage() {
 
                     {/* Headline */}
                     <h1 style={{
-                        fontSize: 'clamp(40px, 6vw, 64px)',
+                        fontSize: 'clamp(36px, 5vw, 56px)',
                         fontWeight: 700,
                         lineHeight: 1.1,
                         marginBottom: '24px',
@@ -78,7 +85,7 @@ export default function LandingPage() {
                     }}>
                         Translate GitHub PRs<br />
                         <span style={{
-                            background: 'linear-gradient(135deg, var(--color-primary-green), #4 ade80)',
+                            background: 'linear-gradient(135deg, var(--color-primary-green), #4ade80)',
                             WebkitBackgroundClip: 'text'
                         }}>
                             in any language
@@ -87,19 +94,19 @@ export default function LandingPage() {
 
                     {/* Typewriter Animation */}
                     <div style={{
-                        margin: '0 auto 32px',
+                        marginBottom: '32px',
                         display: 'flex',
-                        justifyContent: 'center'
+                        justifyContent: 'flex-start'
                     }}>
                         <Typewriter />
                     </div>
 
                     {/* Subheadline */}
                     <p style={{
-                        fontSize: '20px',
+                        fontSize: '18px',
                         color: 'var(--github-text-secondary)',
-                        maxWidth: '600px',
-                        margin: '0 auto 40px',
+                        maxWidth: '500px',
+                        margin: '0 0 40px 0',
                         lineHeight: 1.6
                     }}>
                         Bridge language barriers in your open source projects. Translate PR descriptions and comments instantly while preserving code and formatting.
@@ -118,8 +125,7 @@ export default function LandingPage() {
                                 color: '#f85149',
                                 fontSize: '14px',
                                 marginBottom: '24px',
-                                maxWidth: '400px',
-                                margin: '0 auto 24px'
+                                maxWidth: '400px'
                             }}
                         >
                             {error}
@@ -160,6 +166,22 @@ export default function LandingPage() {
                     }}>
                         Free for public repositories
                     </p>
+                </motion.div>
+
+                {/* Right side - Globe Animation */}
+                <motion.div
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    style={{
+                        position: 'relative',
+                        height: '500px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <LanguageGlobe />
                 </motion.div>
             </section>
 
