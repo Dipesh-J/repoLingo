@@ -9,7 +9,11 @@ import AuthCallbackPage from './pages/AuthCallbackPage';
 import './App.css';
 import type { ReactNode } from 'react';
 
-// Protected Route wrapper component
+/**
+ * Ensures its children are only rendered for authenticated users, showing a loading indicator while authentication is in progress and redirecting unauthenticated users to the root path.
+ *
+ * @returns The rendered route content: the `children` when a user is authenticated, a centered loading spinner while authentication is loading, or a navigation redirect to `/` when no user is present.
+ */
 function ProtectedRoute({ children }: { children: ReactNode }) {
     const { user, loading } = useAuth();
 
@@ -41,6 +45,14 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
     return <>{children}</>;
 }
 
+/**
+ * Renders the application's main layout including the global navigation bar and route configuration.
+ *
+ * Provides public routes (root landing or dashboard, and OAuth callback), protected routes for dashboard
+ * and settings (wrapped by ProtectedRoute), and a translation page route with URL parameters.
+ *
+ * @returns The root JSX element that contains the app layout and Routes.
+ */
 function AppContent() {
     const { user } = useAuth();
 
